@@ -39,7 +39,6 @@
 
             function enter_game() {
                 update_dom();
-                start_button.hidden = !start_button.hidden;
                 console.log("Appel du serveur");
                 socket.emit('enter_game', username);
             }
@@ -57,16 +56,10 @@
                 createHexagonBoard();
                 fillHexagonBoard();
                 gridColoring();
-                if (username = )
-                start_button.hidden = !start_button.hidden;
             }
 
             function request_player_list(){
                 socket.emit("request_player_list");
-            }
-
-            function get_player_list(){
-                socket.emit("get_player_list");
             }
 
             function add_player(player){
@@ -102,6 +95,7 @@
             });
 
             socket.on('send_list', list => {
+                players_list = list;
                 console.log('Liste des joueurs :');
                 console.log(list);
             });
@@ -119,6 +113,10 @@
                 add_player(player);
                 });
             });
+
+            socket.on("chef_de_partie", value => {
+                start_button.hidden = !start_button.hidden;
+            })
 
             var nbLignes = 13;
             var nbColonnes = 13;

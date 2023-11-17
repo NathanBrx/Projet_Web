@@ -27,6 +27,9 @@ io.on('connection', (socket) => {
             socket.emit("connected", player);
             io.emit('send_list', players);
             io.emit("player_added",player);
+            if (player == players[0]) {
+                io.emit("chef_de_partie");
+            }
         }
     });
 
@@ -40,10 +43,6 @@ io.on('connection', (socket) => {
     socket.on("request_player_list", value => {
         socket.emit("send_list_load",players);
     });
-
-    socket.on("get_player_list", value => {
-        io.emit("plyer_list")
-    })
     
     socket.on('mess',data => {
         io.emit('messagerie',data); 
