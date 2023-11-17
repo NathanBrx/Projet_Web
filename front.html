@@ -50,7 +50,7 @@
                 socket.emit("quit_game",pseudo.innerText);
                 change_view();
             }
-
+            
             function start_game() {
                 update_dom();
                 createHexagonBoard();
@@ -88,7 +88,7 @@
             });
 
             socket.on("connected", player => {
-                console.log("Connection réussi");
+                console.log("Connection réussie");
                 username = player;
                 connected = true;
                 change_view();
@@ -116,7 +116,7 @@
 
             socket.on("chef_de_partie", value => {
                 start_button.hidden = !start_button.hidden;
-            })
+            });
 
             var nbLignes = 13;
             var nbColonnes = 13;
