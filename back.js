@@ -24,7 +24,8 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 server.listen(8880, () => {console.log('Le serveur écoute sur le port 8880');});
 
-let players = [];
+var players = [];
+var playerStats = {};
 var max_player = 4;
 var hexList = [];
 var colors = ["blue","green","brown"];
@@ -42,6 +43,7 @@ io.on('connection', (socket) => {
         } else {
             console.log(player,"est entré dans la partie");
             players.push(player);
+            playerStats[player] = [];
             socket.emit("connected", player);
             io.emit('send_list', players);
             io.emit("player_added",player);
@@ -71,6 +73,39 @@ io.on('connection', (socket) => {
         const svgHTML = createHexagonBoard(nbLignes,nbColonnes,rayHex);
         io.emit("boardCreated",svgHTML);
     });
+
+    socket.on("stats", (reproduction, perception, force, player) => {
+        var stats = [reproduction, perception, force];
+
+        function checkSameStats(user, stats) {
+            for (var i=0; i<=2; i++) {
+                if (playerStats[user][i] != stats[i]) {
+                    return false;
+                }
+            }
+            return true;
+        }
+        
+        if (players.length > 1) {
+            var sameStats = false;
+            for (var i=0; i<= players.length-1; i++) {
+                if (checkSameStats(players[i], stats)) {
+                    sameStats = true;
+                    break;
+                }
+            }
+
+            if (sameStats) {
+                io.emit("stats_error");
+            } else {
+                playerStats[player] = stats;
+            }
+        } else {
+            playerStats[player] = stats;
+        }
+        console.log(playerStats);
+    });
+
 });
 
 function creeHexagone(rayon){
