@@ -30,6 +30,8 @@ var max_player = 4;
 var hexList = [];
 var colors = ["blue","green","brown"];
 
+app.use(express.static(__dirname + '/public'));
+
 app.get('/', (request, response) => {
     response.sendFile('front.html', {root: __dirname});
 });

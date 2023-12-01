@@ -3,208 +3,208 @@
    <head>
         <meta charset="utf-8">
         <title>Projet Web</title>
-        <link rel="stylesheet" href="main.css">
-      <script src="https://d3js.org/d3.v5.min.js"></script>
-      <script src="/socket.io/socket.io.js"></script>
-      <script>
-            var socket = io();
-            var name_field = document.getElementById("name");
-            var field_label = document.getElementById("name_label");
-            var pseudo = document.getElementById("pseudo");
-            var enter_btn = document.getElementById("enter_btn");
-            var exit_btn = document.getElementById("exit_btn");
-            var start_button = document.getElementById("game_start");
-            var stats = document.getElementById("stats");
-            var username = "";
-            var connected = false;
-
-            function update_dom(){
-                name_field = document.getElementById("name");
-                field_label = document.getElementById("name_label");
-                pseudo = document.getElementById("pseudo");
-                enter_btn = document.getElementById("enter_btn");
-                exit_btn = document.getElementById("exit_btn");
-                start_button = document.getElementById("game_start");
-                stats = document.getElementById("stats");
-                username = name_field.value;
-            }
-
-            function change_view(){
-                name_field.disabled = !name_field.disabled;
-                name_field.hidden = !name_field.hidden;
-                field_label.hidden = !field_label.hidden;
-                enter_btn.hidden = !enter_btn.hidden;
-                exit_btn.hidden = !exit_btn.hidden;
-                stats.hidden = !stats.hidden;
-                if(pseudo.innerText!=""){
-                pseudo.innerText = "";
-                } else {
-                pseudo.innerText = username;
-                }
-                start_button.hidden = true;
-            }
-
-            function enter_game() {
-                update_dom();
-                console.log("Appel du serveur");
-                socket.emit('enter_game', username);
-            }
-
-            function quit_game() {
-                update_dom();
-                console.log("Appel du serveur");
-                connected = false;
-                socket.emit("quit_game",pseudo.innerText);
-                change_view();
-            }
-            
-            function start_game() {
-                update_dom();
-                createBoard();
-            }
-
-            function request_player_list(){
-                socket.emit("request_player_list");
-            }
-
-            function add_player(player){
-                var player_list = document.getElementById("player_list");
-                var li = document.createElement("li");
-                li.setAttribute("id","play_"+player);
-                li.innerText = player;
-                player_list.appendChild(li);
-            }
-
-            function sendMessage(){
-                let message = document.getElementById('messages').value;
-                socket.emit('mess',message);
-            }
-
-            socket.on('messagerie', data => {
-                var messagerie = document.getElementById('messageAffiche');
-                var message = document.createElement('p');
-                message.innerText = data;
-                messagerie.appendChild(message);
-            })
-
-            socket.on("erreur",message => {
-                console.log(message);
-                window.alert(message);
-            });
-
-            socket.on("connected", player => {
-                console.log("Connection réussie");
-                username = player;
-                connected = true;
-                change_view();
-            });
-
-            socket.on('send_list', list => {
-                players_list = list;
-                console.log('Liste des joueurs :');
-                console.log(list);
-            });
-
-            socket.on("player_added", player => {
-                add_player(player);
-            });
-
-            socket.on("player_removed", player => {
-                document.getElementById("play_"+player).remove();
-            });
-
-            socket.on("send_list_load", players => {
-                players.forEach(player => {
-                add_player(player);
-                });
-            });
-
-            socket.on("chef_de_partie", value => {
-                start_button.hidden = !start_button.hidden;
-            });
-
-            socket.on("stats_error", () => {
-                window.alert("Vous ne pouvez pas avoir la même distribution de stats qu'un autre joueur");
-                document.getElementById("confirm_stats").hidden = false;
-            });
-
-            var nbLignes = 13;
-            var nbColonnes = 13;
-            var rayHex = 25;
-            
-            function createBoard(){
-                socket.emit("createBoard",nbLignes,nbColonnes,rayHex);
-            }
-
-            socket.on("boardCreated", (tablier) => {
-                d3.select("#tablier").html(tablier);
-            });
-
-            window.addEventListener("load",() => {
-                request_player_list();
-            });
-         </script>
-   </head>
-   <body>
-      <p id="pseudo"></p>
-      <label id="name_label" for="name">Entrez votre nom</label>
-      <input id="name" type="text" placeholder="player">
-      <button id="enter_btn" onclick="enter_game()">Entrer dans la partie</button>
-      <button hidden="true" id="exit_btn" onclick="quit_game()">Sortir de la partie</button>
-      <h2>Liste des joueurs</h2>
-      <ul id="player_list"></ul>
-      <div id="stats" hidden="true">
-        <h2>Statistiques</h2>
-        <p>9 points à attribuer</p>
-        <h3>Reproduction</h3>
-        <input type="range" min="1" max="5" value="1" id="reproduction"> Valeur : <span id="repro"></span>
-        <h3>Perception</h3>
-        <input type="range" min="1" max="5" value="1" id="perception"> Valeur : <span id="percep"></span>
-        <h3>Force</h3>
-        <input type="range" min="1" max="5" value="1" id="force"> Valeur : <span id="forc"></span>
+        <link rel="stylesheet" type="text/css" href="css/main.css">
+        <script src="https://d3js.org/d3.v5.min.js"></script>
+        <script src="/socket.io/socket.io.js"></script>
         <script>
-            function initializeSlider(sliderId, outputId) {
-                var slider = document.getElementById(sliderId);
-                var output = document.getElementById(outputId);
+                var socket = io();
+                var name_field = document.getElementById("name");
+                var field_label = document.getElementById("name_label");
+                var pseudo = document.getElementById("pseudo");
+                var enter_btn = document.getElementById("enter_btn");
+                var exit_btn = document.getElementById("exit_btn");
+                var start_button = document.getElementById("game_start");
+                var stats = document.getElementById("stats");
+                var username = "";
+                var connected = false;
 
-                output.innerHTML = slider.value;
-
-                function bindSliderToOutput() {
-                    slider.oninput = function() {
-                        output.innerHTML = this.value;
-                    };
+                function update_dom(){
+                    name_field = document.getElementById("name");
+                    field_label = document.getElementById("name_label");
+                    pseudo = document.getElementById("pseudo");
+                    enter_btn = document.getElementById("enter_btn");
+                    exit_btn = document.getElementById("exit_btn");
+                    start_button = document.getElementById("game_start");
+                    stats = document.getElementById("stats");
+                    username = name_field.value;
                 }
 
-                bindSliderToOutput();
-            }
-
-            initializeSlider("reproduction", "repro");
-            initializeSlider("perception", "percep");
-            initializeSlider("force", "forc");
-
-            function confirm_stats(button) {
-                var reproduction = document.getElementById("reproduction").value;
-                var perception = document.getElementById("perception").value;
-                var force = document.getElementById("force").value;
-                var total = parseInt(reproduction) + parseInt(perception) + parseInt(force);
-                if (total == 9) {
-                    button.hidden = true;
-                    socket.emit("stats", reproduction, perception, force, username);
-                } else {
-                    window.alert("Vous devez attribuer 9 points");
+                function change_view(){
+                    name_field.disabled = !name_field.disabled;
+                    name_field.hidden = !name_field.hidden;
+                    field_label.hidden = !field_label.hidden;
+                    enter_btn.hidden = !enter_btn.hidden;
+                    exit_btn.hidden = !exit_btn.hidden;
+                    stats.hidden = !stats.hidden;
+                    if(pseudo.innerText!=""){
+                    pseudo.innerText = "";
+                    } else {
+                    pseudo.innerText = username;
+                    }
+                    start_button.hidden = true;
                 }
-            }
-        </script>
-        <button type="button" id="confirm_stats" onclick="confirm_stats(this)">Confirmer distribution des stats</button>
-      </div>
-      <button hidden="true" id="game_start" onclick="start_game()">Lancez la partie</button>
-      <h2>Jeu</h2>
-      <div id="tablier"></div>
-      <h2>Messagerie</h2>
-      <p><label for="messages">Entrez votre message : </label></p>
-      <textarea id="messages" name="messages" rows="4" cols="50" placeholder="Entrez un message à envoyer"></textarea>
-      <br>
-      <button type = "button" onclick="sendMessage()"> Envoyer message</button>
-      <div id='messageAffiche'></div>
-   </body>
+
+                function enter_game() {
+                    update_dom();
+                    console.log("Appel du serveur");
+                    socket.emit('enter_game', username);
+                }
+
+                function quit_game() {
+                    update_dom();
+                    console.log("Appel du serveur");
+                    connected = false;
+                    socket.emit("quit_game",pseudo.innerText);
+                    change_view();
+                }
+                
+                function start_game() {
+                    update_dom();
+                    createBoard();
+                }
+
+                function request_player_list(){
+                    socket.emit("request_player_list");
+                }
+
+                function add_player(player){
+                    var player_list = document.getElementById("player_list");
+                    var li = document.createElement("li");
+                    li.setAttribute("id","play_"+player);
+                    li.innerText = player;
+                    player_list.appendChild(li);
+                }
+
+                function sendMessage(){
+                    let message = document.getElementById('messages').value;
+                    socket.emit('mess',message);
+                }
+
+                socket.on('messagerie', data => {
+                    var messagerie = document.getElementById('messageAffiche');
+                    var message = document.createElement('p');
+                    message.innerText = data;
+                    messagerie.appendChild(message);
+                })
+
+                socket.on("erreur",message => {
+                    console.log(message);
+                    window.alert(message);
+                });
+
+                socket.on("connected", player => {
+                    console.log("Connection réussie");
+                    username = player;
+                    connected = true;
+                    change_view();
+                });
+
+                socket.on('send_list', list => {
+                    players_list = list;
+                    console.log('Liste des joueurs :');
+                    console.log(list);
+                });
+
+                socket.on("player_added", player => {
+                    add_player(player);
+                });
+
+                socket.on("player_removed", player => {
+                    document.getElementById("play_"+player).remove();
+                });
+
+                socket.on("send_list_load", players => {
+                    players.forEach(player => {
+                    add_player(player);
+                    });
+                });
+
+                socket.on("chef_de_partie", value => {
+                    start_button.hidden = !start_button.hidden;
+                });
+
+                socket.on("stats_error", () => {
+                    window.alert("Vous ne pouvez pas avoir la même distribution de stats qu'un autre joueur");
+                    document.getElementById("confirm_stats").hidden = false;
+                });
+
+                var nbLignes = 13;
+                var nbColonnes = 13;
+                var rayHex = 25;
+                
+                function createBoard(){
+                    socket.emit("createBoard",nbLignes,nbColonnes,rayHex);
+                }
+
+                socket.on("boardCreated", (tablier) => {
+                    d3.select("#tablier").html(tablier);
+                });
+
+                window.addEventListener("load",() => {
+                    request_player_list();
+                });
+            </script>
+    </head>
+    <body>
+        <p id="pseudo"></p>
+        <label id="name_label" for="name">Entrez votre nom</label>
+        <input id="name" type="text" placeholder="player">
+        <button id="enter_btn" onclick="enter_game()">Entrer dans la partie</button>
+        <button hidden="true" id="exit_btn" onclick="quit_game()">Sortir de la partie</button>
+        <h2>Liste des joueurs</h2>
+        <ul id="player_list"></ul>
+        <div id="stats" hidden="true">
+            <h2>Statistiques</h2>
+            <p>9 points à attribuer</p>
+            <h3>Reproduction</h3>
+            <input type="range" min="1" max="5" value="1" class="slider" id="reproduction"> Valeur : <span id="repro"></span>
+            <h3>Perception</h3>
+            <input type="range" min="1" max="5" value="1" class="slider" id="perception"> Valeur : <span id="percep"></span>
+            <h3>Force</h3>
+            <input type="range" min="1" max="5" value="1" class="slider" id="force"> Valeur : <span id="forc"></span>
+            <script>
+                function initializeSlider(sliderId, outputId) {
+                    var slider = document.getElementById(sliderId);
+                    var output = document.getElementById(outputId);
+
+                    output.innerHTML = slider.value;
+
+                    function bindSliderToOutput() {
+                        slider.oninput = function() {
+                            output.innerHTML = this.value;
+                        };
+                    }
+
+                    bindSliderToOutput();
+                }
+
+                initializeSlider("reproduction", "repro");
+                initializeSlider("perception", "percep");
+                initializeSlider("force", "forc");
+
+                function confirm_stats(button) {
+                    var reproduction = document.getElementById("reproduction").value;
+                    var perception = document.getElementById("perception").value;
+                    var force = document.getElementById("force").value;
+                    var total = parseInt(reproduction) + parseInt(perception) + parseInt(force);
+                    if (total == 9) {
+                        button.hidden = true;
+                        socket.emit("stats", reproduction, perception, force, username);
+                    } else {
+                        window.alert("Vous devez attribuer 9 points");
+                    }
+                }
+            </script>
+            <button type="button" id="confirm_stats" onclick="confirm_stats(this)">Confirmer distribution des stats</button>
+        </div>
+        <button hidden="true" id="game_start" onclick="start_game()">Lancez la partie</button>
+        <h2>Jeu</h2>
+        <div id="tablier"></div>
+        <h2>Messagerie</h2>
+        <p><label for="messages">Entrez votre message : </label></p>
+        <textarea id="messages" name="messages" rows="4" cols="50" placeholder="Entrez un message à envoyer"></textarea>
+        <br>
+        <button type = "button" onclick="sendMessage()"> Envoyer message</button>
+        <div id='messageAffiche'></div>
+    </body>
 </html>
