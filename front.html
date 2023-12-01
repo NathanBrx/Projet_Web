@@ -53,9 +53,7 @@
             
             function start_game() {
                 update_dom();
-                createHexagonBoard();
-                fillHexagonBoard();
-                gridColoring();
+                createBoard();
             }
 
             function request_player_list(){
@@ -122,54 +120,12 @@
             var nbColonnes = 13;
             var rayHex = 25;
             
-            function createHexagonBoard(){
-                var svg = d3.select("#tablier").append("svg").attr("width",Math.sin(Math.PI/3)*rayHex*2*(nbColonnes+(nbLignes-1)/2)).attr("height",rayHex*1.5*nbLignes+rayHex*0.5).style("background-color","white");
-            }
-            
-            function creeHexagone(rayon){
-                var points = new Array();
-                for (var i = 0; i < 6; ++i){
-                var angle = i*Math.PI / 3;
-                var x = Math.sin(angle)*rayon;
-                var y = -Math.cos(angle)*rayon;
-                points.push([Math.round(x*100)/100, Math.round(y*100)/100]);
-                }
-                return points;
-            }
-            
-            function fillHexagonBoard(){
-                var offset = Math.sin(Math.PI/3)*rayHex;
-                var  hexagone = creeHexagone(rayHex);
-                for (var l=0; l < nbLignes; l++){
-                for (var c=0;c<nbColonnes;c++){
-                    var d = "",x,y;
-                    for (h in hexagone){
-                        x = hexagone[h][0]+c*offset*2+offset+l*offset;
-                        y = hexagone[h][1]+l*rayHex*1.5+rayHex;
-                        if(h==0) d+="M"+x+","+y+" L";
-                        else d+= x+","+y+" ";
-                    }
-                    d+= "Z";
-                    d3.select("svg").append("path").attr("d",d).attr("stroke","black").attr("fill","white").attr("id","h"+(l*nbLignes+c));
-                    /*.on("click",function(d){
-                        if(connected){
-                            socket.emit("hexClicked",username,d3.select(this).attr("id"));
-                        }
-                    });*/
-                }
-                }
-            }
-            
-            function gridColoring() {
-                for (let i=0; i<=169; i++){
-                    let current = d3.select("svg").attr("id","h"+i.toString());
-                    socket.emit("fillGrid",current.attr("id"));
-                }
+            function createBoard(){
+                socket.emit("createBoard",nbLignes,nbColonnes,rayHex);
             }
 
-            socket.on("hexFilled",(hexId,color) => {
-                //console.log(color);
-                d3.select("#"+hexId).attr("fill",color);
+            socket.on("boardCreated", (tablier) => {
+                d3.select("#tablier").html(tablier);
             });
 
             window.addEventListener("load",() => {
