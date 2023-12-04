@@ -29,6 +29,9 @@ var playerStats = {};
 var max_player = 4;
 var hexList = [];
 var colors = ["blue","green","brown"];
+var creaturesColors = ["orange","purple","black","white"];
+var creatures = [];
+var tanieres = ["h6","h78","h90","h162"];
 
 app.use(express.static(__dirname + '/public'));
 
@@ -72,7 +75,9 @@ io.on('connection', (socket) => {
 
     socket.on("createBoard", (nbLignes,nbColonnes,rayHex) => {
         console.log("Signal createBoard reçu");
-        const svgHTML = createHexagonBoard(nbLignes,nbColonnes,rayHex);
+        var svg = createHexagonBoard(nbLignes,nbColonnes,rayHex);
+        updateCreaturePositions(svg, creatures, rayHex);
+        const svgHTML = svg.node().outerHTML;
         io.emit("boardCreated",svgHTML);
     });
 
@@ -101,11 +106,16 @@ io.on('connection', (socket) => {
                 io.emit("stats_error");
             } else {
                 playerStats[player] = stats;
+                creatures.push({hexId : tanieres[players.indexOf(player)], name : player+"1", color : creaturesColors[players.indexOf(player)]});
+                creatures.push({hexId : tanieres[players.indexOf(player)], name : player+"2", color : creaturesColors[players.indexOf(player)]});
             }
         } else {
             playerStats[player] = stats;
+            creatures.push({hexId : tanieres[players.indexOf(player)], name : player+"1", color : creaturesColors[0]});
+            creatures.push({hexId : tanieres[players.indexOf(player)], name : player+"2", color : creaturesColors[0]});
         }
         console.log(playerStats);
+        console.log(creatures);
     });
 
 });
@@ -147,8 +157,6 @@ function createHexagonBoard(nbLignes,nbColonnes,rayHex) {
         }
     }
 
-    var tanieres = ["h6","h78","h90","h162"];
-
     for (let i=0; i<=169; i++){
         var current = svg.attr("id","h"+i.toString());
         var color = "";
@@ -167,5 +175,22 @@ function createHexagonBoard(nbLignes,nbColonnes,rayHex) {
         hexList.push([current.attr("id"),color]);
         svg.select("#h"+i.toString()).attr("fill",color);
     }
-    return svg.node().outerHTML;
+    return svg;
+}
+
+function updateCreaturePositions(svg, creatures, rayHex) {
+    creatures.forEach(creature => {
+        console.log(creature.hexId, creature.name, creature.color);
+        // Mettre à jour les positions des créatures dans le SVG
+        var hexagon = svg.select("#" + creature.hexId);
+        console.log(hexagon.node().outerHTML);
+        // Draw the creature at the center of the hexagon
+        svg.append("rect")
+            .attr("class", "creature")
+            .attr("x", 0) // Adjust for the half-width of the creature
+            .attr("y", 0) // Adjust for the half-height of the creature
+            .attr("width", 100)
+            .attr("height", 100)
+            .attr("fill", creature.color);
+    });
 }
