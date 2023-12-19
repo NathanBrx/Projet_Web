@@ -18,6 +18,9 @@
                 var stats = document.getElementById("stats");
                 var username = "";
                 var connected = false;
+                var nbLignes = 13;
+                var nbColonnes = 13;
+                var rayHex = 25;
 
                 function update_dom(){
                     name_field = document.getElementById("name");
@@ -82,7 +85,7 @@
                 }
 
                 socket.on('messagerie', data => {
-                    var messagerie = document.getElementById('messageAffiche');
+                    var messagerie = document.getElementById('messagesAffiches');
                     var message = document.createElement('p');
                     message.innerText = data;
                     messagerie.appendChild(message);
@@ -128,10 +131,6 @@
                     window.alert("Vous ne pouvez pas avoir la même distribution de stats qu'un autre joueur");
                     document.getElementById("confirm_stats").hidden = false;
                 });
-
-                var nbLignes = 13;
-                var nbColonnes = 13;
-                var rayHex = 25;
                 
                 function createBoard(){
                     socket.emit("createBoard",nbLignes,nbColonnes,rayHex);
@@ -231,10 +230,10 @@
         <div id="statDisplay"></div>
         <div id="tablier"></div>
         <div class="Chat">
-        <h2>Messagerie</h2>
+            <h2>Messagerie</h2>
             <div id='messagesAffiches'></div>
             <textarea id="messages" name="messages" placeholder="Entrez un message à envoyer"></textarea>
-        <br>
+            <br>
             <button type = "button" id="sendMessage" onclick="sendMessage()"> Envoyer message</button>
         </div>
     </body>

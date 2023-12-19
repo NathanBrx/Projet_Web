@@ -45,6 +45,8 @@ io.on('connection', (socket) => {
             socket.emit("erreur","Nom d'utilisateur déjà existant");
         } else if (players.length==max_player) {
             socket.emit("erreur","Nombre de joueur maximum atteint");
+        } else if (player == ""){
+            socket.emit("erreur","Nom d'utilisateur vide");
         } else {
             console.log(player,"est entré dans la partie");
             players.push(player);
@@ -61,7 +63,9 @@ io.on('connection', (socket) => {
     socket.on("quit_game", player => {
         console.log(player,"a quitté la partie");
         players.splice(players.indexOf(player),1);
+        creatures.splice(creatures.indexOf(player+"1"),2);
         io.emit('send_list', players);
+        io.emit("updateCreaturesPositions",creatures);
         io.emit("player_removed",player);
     });
 
