@@ -2,7 +2,8 @@
 <html lang="fr">
    <head>
         <meta charset="utf-8">
-        <title>Projet Web</title>
+        <title>Jeu de la vie</title>
+        <link rel="icon" href="./public/terraria_tree.ico"/>
         <link rel="stylesheet" type="text/css" href="css/main.css">
         <script src="https://d3js.org/d3.v5.min.js"></script>
         <script src="/socket.io/socket.io.js"></script>
@@ -17,6 +18,9 @@
                 var stats = document.getElementById("stats");
                 var username = "";
                 var connected = false;
+                var nbLignes = 13;
+                var nbColonnes = 13;
+                var rayHex = 25;
 
                 function update_dom(){
                     name_field = document.getElementById("name");
@@ -81,7 +85,7 @@
                 }
 
                 socket.on('messagerie', data => {
-                    var messagerie = document.getElementById('messageAffiche');
+                    var messagerie = document.getElementById('messagesAffiches');
                     var message = document.createElement('p');
                     message.innerText = data;
                     messagerie.appendChild(message);
@@ -127,10 +131,6 @@
                     window.alert("Vous ne pouvez pas avoir la même distribution de stats qu'un autre joueur");
                     document.getElementById("confirm_stats").hidden = false;
                 });
-
-                var nbLignes = 13;
-                var nbColonnes = 13;
-                var rayHex = 25;
                 
                 function createBoard(){
                     socket.emit("createBoard",nbLignes,nbColonnes,rayHex);
@@ -138,6 +138,31 @@
 
                 socket.on("boardCreated", (tablier) => {
                     d3.select("#tablier").html(tablier);
+                });
+
+                socket.on("updateCreaturesPositions",(creatures) => {
+                    creatures.forEach(creature => {
+                        var bbox = d3.select("#" + creature.hexId).node().getBBox();
+                        var cx = 0, cy = 0, cwidth = 50, cheight = 50;
+                        if (creature.name.includes("1")) {
+                            cx = bbox.x + (bbox.width / 5);
+                            cy = bbox.y + ((bbox.height / 5)* 2);
+                            cwidth = bbox.width / 5;
+                            cheight = bbox.height / 5;
+                        } else {
+                            cx = bbox.x + ((bbox.width / 5) *3);
+                            cy = bbox.y + ((bbox.height / 5) * 2);
+                            cwidth = bbox.width / 5;
+                            cheight = bbox.height / 5;
+                        }
+                        d3.select("#h169")
+                            .append("rect")
+                            .attr("x", cx)
+                            .attr("y", cy)
+                            .attr("width", cwidth)
+                            .attr("height", cheight)
+                            .attr("fill", "red");
+                    });
                 });
 
                 window.addEventListener("load",() => {
@@ -183,13 +208,16 @@
                 initializeSlider("force", "forc");
 
                 function confirm_stats(button) {
-                    var reproduction = document.getElementById("reproduction").value;
-                    var perception = document.getElementById("perception").value;
-                    var force = document.getElementById("force").value;
-                    var total = parseInt(reproduction) + parseInt(perception) + parseInt(force);
+                    var reproduction = document.getElementById("reproduction");
+                    var perception = document.getElementById("perception");
+                    var force = document.getElementById("force");
+                    var total = parseInt(reproduction.value) + parseInt(perception.value) + parseInt(force.value);
                     if (total == 9) {
                         button.hidden = true;
-                        socket.emit("stats", reproduction, perception, force, username);
+                        reproduction.disabled = true;
+                        perception.disabled = true;
+                        force.disabled = true;
+                        socket.emit("stats", reproduction.value, perception.value, force.value, username);
                     } else {
                         window.alert("Vous devez attribuer 9 points");
                     }
@@ -199,12 +227,14 @@
         </div>
         <button hidden="true" id="game_start" onclick="start_game()">Lancez la partie</button>
         <h2>Jeu</h2>
+        <div id="statDisplay"></div>
         <div id="tablier"></div>
-        <h2>Messagerie</h2>
-        <p><label for="messages">Entrez votre message : </label></p>
-        <textarea id="messages" name="messages" rows="4" cols="50" placeholder="Entrez un message à envoyer"></textarea>
-        <br>
-        <button type = "button" onclick="sendMessage()"> Envoyer message</button>
-        <div id='messageAffiche'></div>
+        <div class="Chat">
+            <h2>Messagerie</h2>
+            <div id='messagesAffiches'></div>
+            <textarea id="messages" name="messages" placeholder="Entrez un message à envoyer"></textarea>
+            <br>
+            <button type = "button" id="sendMessage" onclick="sendMessage()"> Envoyer message</button>
+        </div>
     </body>
 </html>

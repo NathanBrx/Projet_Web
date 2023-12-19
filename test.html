@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://d3js.org/d3.v5.min.js"></script>
+    <title>Document</title>
+    <script>
+        // Function to get the bounding box of an SVG path
+        function caca() {
+            function getBoundingBox(pathId) {
+            var path = document.getElementById(pathId);
+            var bbox = path.getBBox();
+            return {
+                x: bbox.x,
+                y: bbox.y,
+                width: bbox.width,
+                height: bbox.height
+            };
+            }
+            var pathBoundingBox = getBoundingBox("h2");
+            var rect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+            rect.setAttribute("x", pathBoundingBox.x + 5);
+            rect.setAttribute("y", pathBoundingBox.y + 5);
+            rect.setAttribute("width", pathBoundingBox.width - 10);
+            rect.setAttribute("height", pathBoundingBox.height - 10);
+            rect.setAttribute("fill", "red");
+            document.getElementById("h169").appendChild(rect);
+        }
+    </script>
+</head>
+<body>
+    <svg width="822.7241335952167" height="500" style="background-color: white;" id="h169">
+        <path d="M21.650635094610966,0 L43.30063509461097,12.5 43.30063509461097,37.5 21.650635094610966,50 0.0006350946109670019,37.5 0.0006350946109670019,12.5 Z" stroke="black" fill="green" id="h0"></path><path d="M108.25317547305482,0 L129.90317547305483,12.5 129.90317547305483,37.5 108.25317547305482,50 86.60317547305483,37.5 86.60317547305483,12.5 Z" stroke="black" fill="brown" id="h2"></path>
+    </svg>
+    <button onclick="caca()">caca</button>
+</body>
+</html>

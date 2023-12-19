@@ -45,6 +45,8 @@ io.on('connection', (socket) => {
             socket.emit("erreur","Nom d'utilisateur déjà existant");
         } else if (players.length==max_player) {
             socket.emit("erreur","Nombre de joueur maximum atteint");
+        } else if (player == ""){
+            socket.emit("erreur","Nom d'utilisateur vide");
         } else {
             console.log(player,"est entré dans la partie");
             players.push(player);
@@ -61,11 +63,13 @@ io.on('connection', (socket) => {
     socket.on("quit_game", player => {
         console.log(player,"a quitté la partie");
         players.splice(players.indexOf(player),1);
+        creatures.splice(creatures.indexOf(player+"1"),2);
         io.emit('send_list', players);
+        io.emit("updateCreaturesPositions",creatures);
         io.emit("player_removed",player);
     });
 
-    socket.on("request_player_list", value => {
+    socket.on("request_player_list", () => {
         socket.emit("send_list_load",players);
     });
     
@@ -74,11 +78,10 @@ io.on('connection', (socket) => {
     });
 
     socket.on("createBoard", (nbLignes,nbColonnes,rayHex) => {
-        console.log("Signal createBoard reçu");
         var svg = createHexagonBoard(nbLignes,nbColonnes,rayHex);
-        updateCreaturePositions(svg, creatures, rayHex);
         const svgHTML = svg.node().outerHTML;
         io.emit("boardCreated",svgHTML);
+        io.emit("updateCreaturesPositions",creatures);
     });
 
     socket.on("stats", (reproduction, perception, force, player) => {
@@ -106,18 +109,17 @@ io.on('connection', (socket) => {
                 io.emit("stats_error");
             } else {
                 playerStats[player] = stats;
-                creatures.push({hexId : tanieres[players.indexOf(player)], name : player+"1", color : creaturesColors[players.indexOf(player)]});
-                creatures.push({hexId : tanieres[players.indexOf(player)], name : player+"2", color : creaturesColors[players.indexOf(player)]});
+                creatures.push({hexId : tanieres[players.indexOf(player)], name : player+"1", color : creaturesColors[players.indexOf(player)], sexe : "male"});
+                creatures.push({hexId : tanieres[players.indexOf(player)], name : player+"2", color : creaturesColors[players.indexOf(player)], sexe: "femelle"});
             }
         } else {
             playerStats[player] = stats;
-            creatures.push({hexId : tanieres[players.indexOf(player)], name : player+"1", color : creaturesColors[0]});
-            creatures.push({hexId : tanieres[players.indexOf(player)], name : player+"2", color : creaturesColors[0]});
+            creatures.push({hexId : tanieres[players.indexOf(player)], name : player+"1", color : creaturesColors[0], sexe: "male"});
+            creatures.push({hexId : tanieres[players.indexOf(player)], name : player+"2", color : creaturesColors[0], sexe: "femelle"});
         }
         console.log(playerStats);
         console.log(creatures);
     });
-
 });
 
 function creeHexagone(rayon){
@@ -176,21 +178,4 @@ function createHexagonBoard(nbLignes,nbColonnes,rayHex) {
         svg.select("#h"+i.toString()).attr("fill",color);
     }
     return svg;
-}
-
-function updateCreaturePositions(svg, creatures, rayHex) {
-    creatures.forEach(creature => {
-        console.log(creature.hexId, creature.name, creature.color);
-        // Mettre à jour les positions des créatures dans le SVG
-        var hexagon = svg.select("#" + creature.hexId);
-        console.log(hexagon.node().outerHTML);
-        // Draw the creature at the center of the hexagon
-        svg.append("rect")
-            .attr("class", "creature")
-            .attr("x", 0) // Adjust for the half-width of the creature
-            .attr("y", 0) // Adjust for the half-height of the creature
-            .attr("width", 100)
-            .attr("height", 100)
-            .attr("fill", creature.color);
-    });
 }
