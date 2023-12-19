@@ -27,3 +27,80 @@ border-radius: 50%;
 background: #04AA6D;
 cursor: pointer;
 }
+
+.Chat {
+    align-items: center;
+    background-color: rgb(0 0 0 / 0.7);
+    backdrop-filter: blur(2em);
+    position: absolute;
+    top: 1em;
+    right: 1em;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    width: 20%;
+    height: 90%;
+}
+
+.Chat #messages {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+}
+
+#messagesAffiches {
+    overflow-y: scroll;
+    height: 70%;
+    max-height: 75%;
+}
+
+#messagesAffiches::-webkit-scrollbar {
+    width: 8px;
+}
+
+#messagesAffiches::-webkit-scrollbar-thumb {
+    background-color: #888;
+    border-radius: 4px;
+}
+  
+/* Piste de la barre de défilement */
+#messagesAffiches::-webkit-scrollbar-track {
+    background-color: transparent;
+}
+
+/*.Chat #messagesAffiches {
+    background-color: transparent;
+    resize: none;
+    color: gainsboro;
+
+    height: 1.5em;
+
+    padding: 1em;
+}
+*/
+.Chat h2 {
+    color: gainsboro;
+}
+
+button {
+    border-radius: 0.5em;
+    height: 3em;
+    background-color: gainsboro;
+    border-color: gainsboro;
+    border-style: solid;
+    text-transform: uppercase;
+    font-weight: bold;
+    padding: 1em;
+    cursor: pointer;
+}
+
+#sendMessage {
+    margin-bottom: 1em;
+}
+
+button:hover {
+    background-color: #2e772e;
+    color: gainsboro;
+    transition: all 0.2s ease-in-out;
+}

@@ -209,13 +209,16 @@
                 initializeSlider("force", "forc");
 
                 function confirm_stats(button) {
-                    var reproduction = document.getElementById("reproduction").value;
-                    var perception = document.getElementById("perception").value;
-                    var force = document.getElementById("force").value;
-                    var total = parseInt(reproduction) + parseInt(perception) + parseInt(force);
+                    var reproduction = document.getElementById("reproduction");
+                    var perception = document.getElementById("perception");
+                    var force = document.getElementById("force");
+                    var total = parseInt(reproduction.value) + parseInt(perception.value) + parseInt(force.value);
                     if (total == 9) {
                         button.hidden = true;
-                        socket.emit("stats", reproduction, perception, force, username);
+                        reproduction.disabled = true;
+                        perception.disabled = true;
+                        force.disabled = true;
+                        socket.emit("stats", reproduction.value, perception.value, force.value, username);
                     } else {
                         window.alert("Vous devez attribuer 9 points");
                     }
@@ -225,12 +228,14 @@
         </div>
         <button hidden="true" id="game_start" onclick="start_game()">Lancez la partie</button>
         <h2>Jeu</h2>
+        <div id="statDisplay"></div>
         <div id="tablier"></div>
+        <div class="Chat">
         <h2>Messagerie</h2>
-        <p><label for="messages">Entrez votre message : </label></p>
-        <textarea id="messages" name="messages" rows="4" cols="50" placeholder="Entrez un message à envoyer"></textarea>
+            <div id='messagesAffiches'></div>
+            <textarea id="messages" name="messages" placeholder="Entrez un message à envoyer"></textarea>
         <br>
-        <button type = "button" onclick="sendMessage()"> Envoyer message</button>
-        <div id='messageAffiche'></div>
+            <button type = "button" id="sendMessage" onclick="sendMessage()"> Envoyer message</button>
+        </div>
     </body>
 </html>
