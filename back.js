@@ -78,7 +78,6 @@ io.on('connection', (socket) => {
     });
 
     socket.on("createBoard", (nbLignes,nbColonnes,rayHex) => {
-        console.log("Signal createBoard reçu");
         var svg = createHexagonBoard(nbLignes,nbColonnes,rayHex);
         const svgHTML = svg.node().outerHTML;
         io.emit("boardCreated",svgHTML);
@@ -110,13 +109,13 @@ io.on('connection', (socket) => {
                 io.emit("stats_error");
             } else {
                 playerStats[player] = stats;
-                creatures.push({hexId : tanieres[players.indexOf(player)], name : player+"1", color : creaturesColors[players.indexOf(player)]});
-                creatures.push({hexId : tanieres[players.indexOf(player)], name : player+"2", color : creaturesColors[players.indexOf(player)]});
+                creatures.push({hexId : tanieres[players.indexOf(player)], name : player+"1", color : creaturesColors[players.indexOf(player)], sexe : "male"});
+                creatures.push({hexId : tanieres[players.indexOf(player)], name : player+"2", color : creaturesColors[players.indexOf(player)], sexe: "femelle"});
             }
         } else {
             playerStats[player] = stats;
-            creatures.push({hexId : tanieres[players.indexOf(player)], name : player+"1", color : creaturesColors[0]});
-            creatures.push({hexId : tanieres[players.indexOf(player)], name : player+"2", color : creaturesColors[0]});
+            creatures.push({hexId : tanieres[players.indexOf(player)], name : player+"1", color : creaturesColors[0], sexe: "male"});
+            creatures.push({hexId : tanieres[players.indexOf(player)], name : player+"2", color : creaturesColors[0], sexe: "femelle"});
         }
         console.log(playerStats);
         console.log(creatures);
