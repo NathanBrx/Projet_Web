@@ -65,7 +65,7 @@ io.on('connection', (socket) => {
         io.emit("player_removed",player);
     });
 
-    socket.on("request_player_list", value => {
+    socket.on("request_player_list", () => {
         socket.emit("send_list_load",players);
     });
     
@@ -76,9 +76,9 @@ io.on('connection', (socket) => {
     socket.on("createBoard", (nbLignes,nbColonnes,rayHex) => {
         console.log("Signal createBoard reçu");
         var svg = createHexagonBoard(nbLignes,nbColonnes,rayHex);
-        updateCreaturePositions(svg, creatures, rayHex);
         const svgHTML = svg.node().outerHTML;
         io.emit("boardCreated",svgHTML);
+        io.emit("updateCreaturesPositions",creatures);
     });
 
     socket.on("stats", (reproduction, perception, force, player) => {
@@ -117,7 +117,6 @@ io.on('connection', (socket) => {
         console.log(playerStats);
         console.log(creatures);
     });
-
 });
 
 function creeHexagone(rayon){
@@ -176,21 +175,4 @@ function createHexagonBoard(nbLignes,nbColonnes,rayHex) {
         svg.select("#h"+i.toString()).attr("fill",color);
     }
     return svg;
-}
-
-function updateCreaturePositions(svg, creatures, rayHex) {
-    creatures.forEach(creature => {
-        console.log(creature.hexId, creature.name, creature.color);
-        // Mettre à jour les positions des créatures dans le SVG
-        var hexagon = svg.select("#" + creature.hexId);
-        console.log(hexagon.node().outerHTML);
-        // Draw the creature at the center of the hexagon
-        svg.append("rect")
-            .attr("class", "creature")
-            .attr("x", 0) // Adjust for the half-width of the creature
-            .attr("y", 0) // Adjust for the half-height of the creature
-            .attr("width", 100)
-            .attr("height", 100)
-            .attr("fill", creature.color);
-    });
 }
