@@ -141,6 +141,31 @@
                     d3.select("#tablier").html(tablier);
                 });
 
+                socket.on("updateCreaturesPositions",(creatures) => {
+                    creatures.forEach(creature => {
+                        var bbox = d3.select("#" + creature.hexId).node().getBBox();
+                        var cx = 0, cy = 0, cwidth = 50, cheight = 50;
+                        if (creature.name.includes("1")) {
+                            cx = bbox.x + (bbox.width / 5);
+                            cy = bbox.y + ((bbox.height / 5)* 2);
+                            cwidth = bbox.width / 5;
+                            cheight = bbox.height / 5;
+                        } else {
+                            cx = bbox.x + ((bbox.width / 5) *3);
+                            cy = bbox.y + ((bbox.height / 5) * 2);
+                            cwidth = bbox.width / 5;
+                            cheight = bbox.height / 5;
+                        }
+                        d3.select("#h169")
+                            .append("rect")
+                            .attr("x", cx)
+                            .attr("y", cy)
+                            .attr("width", cwidth)
+                            .attr("height", cheight)
+                            .attr("fill", "red");
+                    });
+                });
+
                 window.addEventListener("load",() => {
                     request_player_list();
                 });
