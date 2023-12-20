@@ -62,8 +62,10 @@ io.on('connection', (socket) => {
 
     socket.on("quit_game", player => {
         console.log(player,"a quitté la partie");
+        playerStats.splice(players.indexOf(player),1);
+        creatures.splice(players.indexOf(player),2);
         players.splice(players.indexOf(player),1);
-        creatures.splice(creatures.indexOf(player+"1"),2);
+        console.log(creatures);
         io.emit('send_list', players);
         io.emit("updateCreaturesPositions",creatures);
         io.emit("player_removed",player);
@@ -106,16 +108,16 @@ io.on('connection', (socket) => {
             }
 
             if (sameStats) {
-                io.emit("stats_error");
+                socket.emit("stats_error");
             } else {
                 playerStats[player] = stats;
-                creatures.push({hexId : tanieres[players.indexOf(player)], name : player+"1", color : creaturesColors[players.indexOf(player)], sexe : "male"});
-                creatures.push({hexId : tanieres[players.indexOf(player)], name : player+"2", color : creaturesColors[players.indexOf(player)], sexe: "femelle"});
+                creatures.push({hexId : tanieres[players.indexOf(player)], name : player+"1", color : creaturesColors[players.indexOf(player)], sexe : "male", hydratation: 10, satiete: 10});
+                creatures.push({hexId : tanieres[players.indexOf(player)], name : player+"2", color : creaturesColors[players.indexOf(player)], sexe: "femelle", hydratation: 10, satiete: 10});
             }
         } else {
             playerStats[player] = stats;
-            creatures.push({hexId : tanieres[players.indexOf(player)], name : player+"1", color : creaturesColors[0], sexe: "male"});
-            creatures.push({hexId : tanieres[players.indexOf(player)], name : player+"2", color : creaturesColors[0], sexe: "femelle"});
+            creatures.push({hexId : tanieres[players.indexOf(player)], name : player+"1", color : creaturesColors[0], sexe: "male", hydratation: 10, satiete: 10});
+            creatures.push({hexId : tanieres[players.indexOf(player)], name : player+"2", color : creaturesColors[0], sexe: "femelle", hydratation: 10, satiete: 10});
         }
         console.log(playerStats);
         console.log(creatures);
@@ -178,4 +180,10 @@ function createHexagonBoard(nbLignes,nbColonnes,rayHex) {
         svg.select("#h"+i.toString()).attr("fill",color);
     }
     return svg;
+}
+
+function tour(grid) {
+    creatures.forEach(creature => {
+        // 
+    });
 }

@@ -29,7 +29,7 @@
                     enter_btn = document.getElementById("enter_btn");
                     exit_btn = document.getElementById("exit_btn");
                     start_button = document.getElementById("game_start");
-                    stats = document.getElementById("stats");
+                    confirm_stats = document.getElementById("confirm_stats");
                     username = name_field.value;
                 }
 
@@ -39,7 +39,7 @@
                     field_label.hidden = !field_label.hidden;
                     enter_btn.hidden = !enter_btn.hidden;
                     exit_btn.hidden = !exit_btn.hidden;
-                    stats.hidden = !stats.hidden;
+                    confirm_stats.hidden = !confirm_stats.hidden;
                     if(pseudo.innerText!=""){
                     pseudo.innerText = "";
                     } else {
@@ -129,7 +129,10 @@
 
                 socket.on("stats_error", () => {
                     window.alert("Vous ne pouvez pas avoir la même distribution de stats qu'un autre joueur");
-                    document.getElementById("confirm_stats").hidden = false;
+                    confirm_stats.hidden = false;
+                    reproduction.disabled = false;
+                    perception.disabled = false;
+                    force.disabled = false;
                 });
                 
                 function createBoard(){
@@ -207,13 +210,13 @@
                 initializeSlider("perception", "percep");
                 initializeSlider("force", "forc");
 
-                function confirm_stats(button) {
+                function confirmStats(button) {
                     var reproduction = document.getElementById("reproduction");
                     var perception = document.getElementById("perception");
                     var force = document.getElementById("force");
                     var total = parseInt(reproduction.value) + parseInt(perception.value) + parseInt(force.value);
                     if (total == 9) {
-                        button.hidden = true;
+                        confirm_stats.hidden = true;
                         reproduction.disabled = true;
                         perception.disabled = true;
                         force.disabled = true;
@@ -223,7 +226,7 @@
                     }
                 }
             </script>
-            <button type="button" id="confirm_stats" onclick="confirm_stats(this)">Confirmer distribution des stats</button>
+            <button type="button" id="confirm_stats" onclick="confirmStats()">Confirmer distribution des stats</button>
         </div>
         <button hidden="true" id="game_start" onclick="start_game()">Lancez la partie</button>
         <h2>Jeu</h2>
