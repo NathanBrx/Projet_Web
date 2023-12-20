@@ -30,14 +30,31 @@ var max_player = 4;
 var hexList = [];
 var colors = ["blue","green","brown"];
 var creaturesColors = ["orange","purple","black","white"];
-var creatures = [];
+var sexes = ["male","femelle"];
 var tanieres = ["h6","h78","h90","h162"];
+var creatures = [];
+var numberOfCreatures = {};
+var tours = 0;
+var maxTours = 10;
 
 app.use(express.static(__dirname + '/public'));
 
 app.get('/', (request, response) => {
     response.sendFile('front.html', {root: __dirname});
 });
+
+class creature {
+    constructor(hexId, name, color, sexe, espece, hydratation, satiete, toursDepuisRepro) {
+        this.hexId = hexId;
+        this.name = name;
+        this.color = color;
+        this.sexe = sexe;
+        this.espece = espece;
+        this.hydratation = hydratation;
+        this.satiete = satiete;
+        this.toursDepuisRepro = toursDepuisRepro;
+    }
+}
 
 io.on('connection', (socket) => {
     socket.on("enter_game", player => {
@@ -62,8 +79,8 @@ io.on('connection', (socket) => {
 
     socket.on("quit_game", player => {
         console.log(player,"a quitté la partie");
-        playerStats.splice(players.indexOf(player),1);
-        creatures.splice(players.indexOf(player),2);
+        delete playerStats[player];
+        creatures = creatures.filter(creature => creature.espece !== player);
         players.splice(players.indexOf(player),1);
         console.log(creatures);
         io.emit('send_list', players);
@@ -89,35 +106,26 @@ io.on('connection', (socket) => {
     socket.on("stats", (reproduction, perception, force, player) => {
         var stats = [reproduction, perception, force];
 
-        function checkSameStats(user, stats) {
-            for (var i=0; i<=2; i++) {
-                if (playerStats[user][i] != stats[i]) {
-                    return false;
-                }
-            }
-            return true;
-        }
-        
-        if (players.length > 1) {
+        function checkSameStats(stats) {
             var sameStats = false;
-            for (var i=0; i<= players.length-1; i++) {
-                if (checkSameStats(players[i], stats)) {
-                    sameStats = true;
-                    break;
+            if (players.length > 1) {
+                for (var user=0; user<= players.length-1; user++) {
+                    for (var i=0; i<=2; i++) {
+                        if (playerStats[user][i] != stats[i]) {
+                            sameStats = false;
+                        }
+                    }
                 }
             }
-
-            if (sameStats) {
-                socket.emit("stats_error");
-            } else {
-                playerStats[player] = stats;
-                creatures.push({hexId : tanieres[players.indexOf(player)], name : player+"1", color : creaturesColors[players.indexOf(player)], sexe : "male", hydratation: 10, satiete: 10});
-                creatures.push({hexId : tanieres[players.indexOf(player)], name : player+"2", color : creaturesColors[players.indexOf(player)], sexe: "femelle", hydratation: 10, satiete: 10});
-            }
+            return sameStats;
+        }
+        if (checkSameStats(stats)) {
+            socket.emit("stats_error");
         } else {
             playerStats[player] = stats;
-            creatures.push({hexId : tanieres[players.indexOf(player)], name : player+"1", color : creaturesColors[0], sexe: "male", hydratation: 10, satiete: 10});
-            creatures.push({hexId : tanieres[players.indexOf(player)], name : player+"2", color : creaturesColors[0], sexe: "femelle", hydratation: 10, satiete: 10});
+            creatures.push(new creature(tanieres[players.indexOf(player)], player+"1", creaturesColors[players.indexOf(player)], sexes[0], player, 5, 5, 0));
+            creatures.push(new creature(tanieres[players.indexOf(player)], player+"2", creaturesColors[players.indexOf(player)], sexes[1], player, 5, 5, 0));
+            numberOfCreatures[player] = 2;
         }
         console.log(playerStats);
         console.log(creatures);
@@ -181,9 +189,47 @@ function createHexagonBoard(nbLignes,nbColonnes,rayHex) {
     }
     return svg;
 }
+function retourTaniere(creature){
+
+
+
+}
+
+function creatureAutreSexe(creature1){
+    var sameSexe = false;
+    creatures.forEach(creature2 => {
+        if (creature1.name != creature2.name && creature1.espece == creature2.espece && creature1.sexe != creature2.sexe && tanieres.includes(creature2.hexId) && creature2.toursDepuisRepro >= 5) {
+            sameSexe = true;
+        }
+    });
+    return sameSexe;
+}
 
 function tour(grid) {
-    creatures.forEach(creature => {
-        // 
-    });
+    if(tours<maxTours){
+        creatures.forEach(creature => {
+            // check taniere + tours depuis repro >= 5 + creature sexe opposé pour baiser
+            if (tanieres.includes(creature.hexId) && creature.toursDepuisRepro >= 5 && creatureAutreSexe(creature)) {
+                for (var i=0; i<playerStats[creature.espece][0]; i++) {
+                    var rdSexe = sexes[Math.floor(Math.random() * sexes.length)];
+                    creatures.push(new creature(creature.hexId, creature.espece + (numberOfCreatures[creature.espece]+1), creature.color, rdSexe, creature.espece, 5, 5, 0));
+                    numberOfCreatures[creature.espece] += 1;
+                }
+            // check si stats >= 6 pour retour taniere
+            } else if(creature.hydratation>=6 && creature.satiete>=6) {
+                retourTaniere(creature);
+            } else {
+
+            }
+            // check cases adjacentes * perception innocupees ou si occupe, force > pour bouger
+                // => liste avec les cases possibles
+                // en fonction des cases possibles, check stats pour savoir ou aller
+                // => réduire les cases possibles en fonction
+            // déplacer la créature
+                // soustraire les stats
+            // ajouter les stats de la case
+            // check si creature décède
+        });
+        tours++;
+    }
 }
