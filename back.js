@@ -130,6 +130,15 @@ io.on('connection', (socket) => {
         console.log(playerStats);
         console.log(creatures);
     });
+
+    socket.on("startGame", async () => {
+        const delay = ms => new Promise(res => setTimeout(res, ms));
+        while (tours <= maxTours) {
+            tour();
+            tours ++;
+            await delay(3000);
+        }
+    });
 });
 
 function creeHexagone(rayon){
@@ -191,13 +200,42 @@ function createHexagonBoard(nbLignes,nbColonnes,rayHex) {
 }
 
 function retourTaniere(creature){
-
-
+    var newHex = creature.hexId;
+    // si creature.hexId % 13 == tanieres[creature.espece] % 13 => meme colonne donc aller de -13 en 13
+    if (creature.hexId % 13 == tanieres[creature.espece] % 13) {
+        if (creature.hexId < tanieres[creature.espece]) {
+            newHex += 13;
+        } else {
+            newHex -= 13;
+        }
+    // sinon si tanieres[creature.espece] < creature.hexId < tanieres[creature.espece] + 12 => meme ligne donc aller de -1 en 1
+    } else if (tanieres[creature.espece] < creature.hexId && creature.hexId < tanieres[creature.espece] + 12) {
+        if (creature.hexId < tanieres[creature.espece]) {
+            newHex += 1;
+        } else {
+            newHex -= 1;
+        }
+    // sinon si creature.hexId % 13 < tanieres[creature.espece] % 13 => aller de -13 en 12
+    } else if (creature.hexId % 13 < tanieres[creature.espece] % 13) {
+        if (creature.hexId < tanieres[creature.espece]) {
+            newHex += 13;
+        } else {
+            newHex -= 12;
+        }
+    // sinon => aller de 12 en -13
+    } else {
+        if (creature.hexId < tanieres[creature.espece]) {
+            newHex += 12;
+        } else {
+            newHex -= 13;
+        }
+    }
+    creature.hexId = newHex;
 }
 
 function creatureAutreSexe(creature1){
     var sameSexe = false;
-    creatures.filter(creature2 => creature1.espece === creature2.espece).forEach(creature2 => {
+    creatures.filter(creature2 => creature1.espece == creature2.espece).forEach(creature2 => {
         if (creature1.sexe != creature2.sexe && tanieres[creature1.espece] == creature2.hexId && creature2.toursDepuisRepro >= 5) {
             sameSexe = true;
             creature1.toursDepuisRepro = 0;
@@ -244,53 +282,53 @@ function listeCasesDispos(grid, espece, hexId){
 }
 
 function tour(grid) {
-    if(tours<maxTours){
-        var casesPossible = [];
-        creatures.forEach(creature => {
-            // check taniere + tours depuis repro >= 5 + creature sexe opposé pour baiser
-            if (tanieres[creature.espece] == creature.hexId && creature.toursDepuisRepro >= 5 && creatureAutreSexe(creature)) {
-                for (var i=0; i<playerStats[creature.espece][0]; i++) {
-                    var rdSexe = sexes[Math.floor(Math.random() * sexes.length)];
-                    creatures.push(new creature(creature.hexId, creature.espece + (numberOfCreatures[creature.espece]+1), creature.color, rdSexe, creature.espece, 5, 5, 0));
-                    numberOfCreatures[creature.espece] += 1;
-                }
-            // check si stats >= 6 pour retour taniere
-            } else if(creature.hydratation>=6 && creature.satiete>=6) {
-                retourTaniere(creature);
-            } else {
-                // check cases adjacentes * perception innocupees ou si occupe, force > pour bouger
-                // => liste avec les cases possibles
-                var typeCasesDispos = []; 
-                listeCasesDispos(grid, creature.espece, creature.hexId).forEach(hexId => {
-                    typeCasesDispos = hexList.filter(hex => hex[0] == hexId);
-                });
-                // si case eau présente
-                if (typeCasesDispos.some(hex => hex.includes("blue"))) {
-                    // si case nourriture et faim => prairie
-                    if (typeCasesDispos.some(hex => hex.includes("green")) && creature.satiete < creature.hydratation) {
-                        creature.hexId = typeCasesDispos.filter(hex => hex.includes("green"))[0];
-                        creature.satiete += 2;
-                    // sinon eau
-                    } else {
-                        creature.hexId = typeCasesDispos.filter(hex => hex.includes("blue"))[0];
-                        creature.hydratation += 3;
-                    }
-                // sinon rocher
-                } else {
-                    creature.hexId = typeCasesDispos.filter(hex => hex.includes("brown"))[0];
-                }
-                // => réduire les cases possibles en fonction
-                creature.hydratation -= 1.5;
-                creature.satiete -= 0.75;
+    var casesPossible = [];
+    creatures.forEach(creature => {
+        // check taniere + tours depuis repro >= 5 + creature sexe opposé pour baiser
+        if (tanieres[creature.espece] == creature.hexId && creature.toursDepuisRepro >= 5 && creatureAutreSexe(creature)) {
+            for (var i=0; i<playerStats[creature.espece][0]; i++) {
+                var rdSexe = sexes[Math.floor(Math.random() * sexes.length)];
+                creatures.push(new creature(creature.hexId, creature.espece + (numberOfCreatures[creature.espece]+1), creature.color, rdSexe, creature.espece, 5, 5, 0));
+                numberOfCreatures[creature.espece] += 1;
             }
-            // check si creature décède
-            if (creature.hydratation <= 0 || creature.satiete <= 0) {
-                creatures.splice(creatures.indexOf(creature),1);
-                numberOfCreatures[creature.espece] -= 1;
-            }
+        // check si stats >= 6 pour retour taniere
+        } else if(creature.hydratation>=6 && creature.satiete>=6) {
+            retourTaniere(creature);
+            creature.hydratation -= 1.5;
+            creature.satiete -= 0.75;                
             creature.toursDepuisRepro += 1;
-        });
-        tours++;
-        io.emit("updateCreaturesPositions",creatures);
-    }
+        } else {
+            // check cases adjacentes * perception innocupees ou si occupe, force > pour bouger
+            // => liste avec les cases possibles
+            var typeCasesDispos = []; 
+            listeCasesDispos(grid, creature.espece, creature.hexId).forEach(hexId => {
+                typeCasesDispos = hexList.filter(hex => hex[0] == hexId);
+            });
+            // si case eau présente
+            if (typeCasesDispos.some(hex => hex.includes("blue"))) {
+                // si case nourriture et faim => prairie
+                if (typeCasesDispos.some(hex => hex.includes("green")) && creature.satiete < creature.hydratation) {
+                    creature.hexId = typeCasesDispos.filter(hex => hex.includes("green"))[0];
+                    creature.satiete += 2;
+                // sinon eau
+                } else {
+                    creature.hexId = typeCasesDispos.filter(hex => hex.includes("blue"))[0];
+                    creature.hydratation += 3;
+                }
+            // sinon rocher
+            } else {
+                creature.hexId = typeCasesDispos.filter(hex => hex.includes("brown"))[0];
+            }
+            // => réduire les cases possibles en fonction
+            creature.hydratation -= 1.5;
+            creature.satiete -= 0.75;
+            creature.toursDepuisRepro += 1;
+        }
+        // check si creature décède
+        if (creature.hydratation <= 0 || creature.satiete <= 0) {
+            creatures.splice(creatures.indexOf(creature),1);
+            numberOfCreatures[creature.espece] -= 1;
+        }
+    });
+    io.emit("updateCreaturesPositions",creatures);
 }
