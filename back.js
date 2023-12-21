@@ -189,27 +189,66 @@ function createHexagonBoard(nbLignes,nbColonnes,rayHex) {
     }
     return svg;
 }
-function retourTaniere(creature){
 
+function retourTaniere(creature){
 
 
 }
 
 function creatureAutreSexe(creature1){
     var sameSexe = false;
-    creatures.forEach(creature2 => {
-        if (creature1.name != creature2.name && creature1.espece == creature2.espece && creature1.sexe != creature2.sexe && tanieres.includes(creature2.hexId) && creature2.toursDepuisRepro >= 5) {
+    creatures.filter(creature2 => creature1.espece === creature2.espece).forEach(creature2 => {
+        if (creature1.sexe != creature2.sexe && tanieres[creature1.espece] == creature2.hexId && creature2.toursDepuisRepro >= 5) {
             sameSexe = true;
+            creature1.toursDepuisRepro = 0;
+            creature2.toursDepuisRepro = 0;
         }
     });
     return sameSexe;
 }
 
+function listeCasesDispos(grid, espece, hexId){
+
+    function inGrid(hexId) {
+        var code = parseInt(hexId.slice(1));
+        if (code > 0 || code < 168) {
+            return true;
+        }
+        return false;
+    }
+
+    function forceSup(occupant) {
+        if (occupant.force < playerStats[espece][2]) {
+            return true;
+        }
+        return false;
+    }
+
+    var casesDispos = [];
+    // répéter le nombre de fois la perception
+    for (var percep=1; percep<=playerStats[espece][1]; percep++) {
+        // liste d'adjacence qui se met a jour a chaque tour
+        var adjacent = [hexIdTemp-(1*percep),hexIdTemp+(1*percep),hexIdTemp-(13*percep),hexIdTemp+(13*percep),hexIdTemp-(12*percep),hexIdTemp+(12*percep)];
+        // pour chaque hexagone adjacent, check si il est dans la grille et si creature présente
+        adjacent.forEach(hexIdTemp => {
+            if (inGrid(hexIdTemp)) {
+                creatures.filter(creature => creature.espece !== espece).forEach(creature => {
+                    if (creature.hexId != hexIdTemp || forceSup(creature)) {
+                        casesDispos.push(adjacent[i]);
+                    }
+                });
+            }
+        });
+    }
+    return casesDispos;
+}
+
 function tour(grid) {
     if(tours<maxTours){
+        var casesPossible = [];
         creatures.forEach(creature => {
             // check taniere + tours depuis repro >= 5 + creature sexe opposé pour baiser
-            if (tanieres.includes(creature.hexId) && creature.toursDepuisRepro >= 5 && creatureAutreSexe(creature)) {
+            if (tanieres[creature.espece] == creature.hexId && creature.toursDepuisRepro >= 5 && creatureAutreSexe(creature)) {
                 for (var i=0; i<playerStats[creature.espece][0]; i++) {
                     var rdSexe = sexes[Math.floor(Math.random() * sexes.length)];
                     creatures.push(new creature(creature.hexId, creature.espece + (numberOfCreatures[creature.espece]+1), creature.color, rdSexe, creature.espece, 5, 5, 0));
@@ -219,17 +258,39 @@ function tour(grid) {
             } else if(creature.hydratation>=6 && creature.satiete>=6) {
                 retourTaniere(creature);
             } else {
-
-            }
-            // check cases adjacentes * perception innocupees ou si occupe, force > pour bouger
+                // check cases adjacentes * perception innocupees ou si occupe, force > pour bouger
                 // => liste avec les cases possibles
-                // en fonction des cases possibles, check stats pour savoir ou aller
+                var typeCasesDispos = []; 
+                listeCasesDispos(grid, creature.espece, creature.hexId).forEach(hexId => {
+                    typeCasesDispos = hexList.filter(hex => hex[0] == hexId);
+                });
+                // si case eau présente
+                if (typeCasesDispos.some(hex => hex.includes("blue"))) {
+                    // si case nourriture et faim => prairie
+                    if (typeCasesDispos.some(hex => hex.includes("green")) && creature.satiete < creature.hydratation) {
+                        creature.hexId = typeCasesDispos.filter(hex => hex.includes("green"))[0];
+                        creature.satiete += 2;
+                    // sinon eau
+                    } else {
+                        creature.hexId = typeCasesDispos.filter(hex => hex.includes("blue"))[0];
+                        creature.hydratation += 3;
+                    }
+                // sinon rocher
+                } else {
+                    creature.hexId = typeCasesDispos.filter(hex => hex.includes("brown"))[0];
+                }
                 // => réduire les cases possibles en fonction
-            // déplacer la créature
-                // soustraire les stats
-            // ajouter les stats de la case
+                creature.hydratation -= 1.5;
+                creature.satiete -= 0.75;
+            }
             // check si creature décède
+            if (creature.hydratation <= 0 || creature.satiete <= 0) {
+                creatures.splice(creatures.indexOf(creature),1);
+                numberOfCreatures[creature.espece] -= 1;
+            }
+            creature.toursDepuisRepro += 1;
         });
         tours++;
+        io.emit("updateCreaturesPositions",creatures);
     }
 }
