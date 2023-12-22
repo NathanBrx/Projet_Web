@@ -163,8 +163,14 @@
                             .attr("y", cy)
                             .attr("width", cwidth)
                             .attr("height", cheight)
-                            .attr("fill", "red");
+                            .attr("fill", "red")
+                            .attr("id", "rect" + creature.hexId);
                     });
+
+                    socket.on("eraseCreature", (hexId) => {
+                        d3.select("#rect" + hexId).remove();
+                    });
+
                 });
 
                 window.addEventListener("load",() => {

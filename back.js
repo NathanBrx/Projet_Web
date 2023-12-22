@@ -126,18 +126,26 @@ io.on('connection', (socket) => {
             numberOfCreatures[player] = 2;
         }
         console.log(playerStats);
-        console.log(creatures);
     });
 
     socket.on("startGame", async () => {
         console.log("La partie commence");
         const delay = ms => new Promise(res => setTimeout(res, ms));
-        while (tours <= maxTours) {
-            console.log("Tour n°",tours);
-            tour();
-            tours ++;
-            await delay(3000);
+
+        async function playTurn() {
+            if (tours <= maxTours) {
+                console.log("Tour n°",tours);
+                console.log(creatures);
+                tour();
+                tours ++;
+                await delay(3000);
+                await playTurn();
+            } else {
+                console.log("La partie est terminée");
+            }
         }
+
+        await playTurn();
     });
 });
 
@@ -248,14 +256,14 @@ function creatureAutreSexe(creature1){
 function listeCasesDispos(espece, hexId){
 
     function inGrid(code) {
-        if (code > 0 || code < 168) {
+        if (code > 0 && code < 168) {
             return true;
         }
         return false;
     }
 
-    function forceSup(occupant) {
-        if (occupant.force < playerStats[espece][2]) {
+    function forceInf(occupant, espece) {
+        if (playerStats[occupant.espece][2] < playerStats[espece][2]) {
             return true;
         }
         return false;
@@ -269,13 +277,17 @@ function listeCasesDispos(espece, hexId){
         var adjacent = [(code-(1*percep)).toString(),(code+(1*percep)).toString(),(code-(13*percep)).toString(),(code+(13*percep)).toString(),(code-(12*percep)).toString(),(code+(12*percep)).toString()];
         // pour chaque hexagone adjacent, check si il est dans la grille et si creature présente
         adjacent.forEach(hexIdTemp => {
-            //console.log("hexIdTemp : " + hexIdTemp + " " + typeof hexIdTemp);
             if (inGrid(hexIdTemp)) {
-                creatures.filter(creature => creature.espece !== espece).forEach(creature => {
-                    if (creature.hexId != "h" + hexIdTemp || forceSup(creature)) {
-                        casesDispos.push("h" + adjacent[i]);
-                    }
-                });
+                var occupants = creatures.filter(creature => creature.hexId == ("h" + hexIdTemp));
+                if (occupants.length != 0) {
+                    occupants.forEach(occupant => {
+                        if (occupant.espece != espece && forceInf(occupant, espece)) {
+                            casesDispos.push("h" + hexIdTemp);
+                        }
+                    });
+                } else {
+                    casesDispos.push("h" + hexIdTemp);
+                }
             }
         });
     }
@@ -283,7 +295,6 @@ function listeCasesDispos(espece, hexId){
 }
 
 function tour(grid) {
-    var casesPossible = [];
     creatures.forEach(creature => {
         // check taniere + tours depuis repro >= 5 + creature sexe opposé pour baiser
         if (tanieres[creature.espece] == creature.hexId && creature.toursDepuisRepro >= 5 && creatureAutreSexe(creature)) {
@@ -301,24 +312,37 @@ function tour(grid) {
         } else {
             // check cases adjacentes * perception innocupees ou si occupe, force > pour bouger
             // => liste avec les cases possibles
-            console.log(creature.hexId, typeof creature.hexId);
             var casesDispos = listeCasesDispos(creature.espece, creature.hexId);
-            console.log(casesDispos);
-            var typeCasesDispos = hexList.filter(hex => hex[0] == '1');
+            console.log("casesDispos: " + casesDispos);
+            var typeCasesDispos = [];
+            casesDispos.forEach(codeCase => {
+                hexList.forEach(hex => {
+                    if (hex[0] == codeCase) {
+                        typeCasesDispos.push(hex);
+                    }
+                });
+            });
+            io.emit("eraseCreature",creature.hexId);
             // si case eau présente
-            if (typeCasesDispos.some(hex => hex.includes("blue"))) {
+            if (typeCasesDispos.some(hex => hex.includes("blue")) && typeCasesDispos.some(hex => hex.includes("green"))) {
                 // si case nourriture et faim => prairie
-                if (typeCasesDispos.some(hex => hex.includes("green")) && creature.satiete < creature.hydratation) {
-                    creature.hexId = typeCasesDispos.filter(hex => hex.includes("green"))[0];
+                if (creature.satiete < creature.hydratation) {
+                    creature.hexId = typeCasesDispos.filter(hex => hex.includes("green"))[0][0];
                     creature.satiete += 2;
                 // sinon eau
                 } else {
-                    creature.hexId = typeCasesDispos.filter(hex => hex.includes("blue"))[0];
+                    creature.hexId = typeCasesDispos.filter(hex => hex.includes("blue"))[0][0];
                     creature.hydratation += 3;
                 }
+            } else if (typeCasesDispos.some(hex => hex.includes("blue")) && !typeCasesDispos.some(hex => hex.includes("green"))) {
+                creature.hexId = typeCasesDispos.filter(hex => hex.includes("blue"))[0][0];
+                creature.hydratation += 3;
+            } else if (!typeCasesDispos.some(hex => hex.includes("blue")) && typeCasesDispos.some(hex => hex.includes("green"))) {
+                creature.hexId = typeCasesDispos.filter(hex => hex.includes("green"))[0][0];
+                creature.satiete += 2;
             // sinon rocher
             } else {
-                creature.hexId = typeCasesDispos.filter(hex => hex.includes("brown"))[0];
+                creature.hexId = typeCasesDispos.filter(hex => hex.includes("brown"))[0][0];
             }
             // => réduire les cases possibles en fonction
             creature.hydratation -= 1.5;
