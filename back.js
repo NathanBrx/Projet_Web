@@ -127,9 +127,9 @@ io.on('connection', (socket) => {
         console.log(playerStats);
     });
 
-    socket.on("sendMaxTours", (tours) => {
+    socket.on("setMaxTours", (tours) => {
+        maxTours = parseInt(tours);
         console.log("maxTours mis à jour : " + maxTours);
-        maxTours = tours;
     });
 
     socket.on("startGame", async () => {
@@ -144,6 +144,7 @@ io.on('connection', (socket) => {
             }
         }
         console.log("La partie est terminée");
+        socket.emit("endGame",numberOfCreatures);
     });
 });
 
@@ -205,48 +206,63 @@ function createHexagonBoard(nbLignes,nbColonnes,rayHex) {
     return svg;
 }
 
+function inGrid(code) {
+    if (code > 0 && code < 168) {
+        return true;
+    }
+    return false;
+}
+
 function retourTaniere(creature){
     var newHex = parseInt(creature.hexId.slice(1));
+    var taniere = parseInt(tanieres[creature.espece].slice(1));
     // si creature.hexId % 13 == tanieres[creature.espece] % 13 => meme colonne donc aller de -13 en 13
-    if (creature.hexId % 13 == tanieres[creature.espece] % 13) {
-        if (creature.hexId < tanieres[creature.espece]) {
+    if (newHex % 13 == taniere % 13) {
+        console.log("meme colonne");
+        if (newHex < taniere) {
             newHex += 13;
         } else {
             newHex -= 13;
         }
     // sinon si tanieres[creature.espece] < creature.hexId < tanieres[creature.espece] + 12 => meme ligne donc aller de -1 en 1
-    } else if (tanieres[creature.espece] < creature.hexId && creature.hexId < tanieres[creature.espece] + 12) {
-        if (creature.hexId < tanieres[creature.espece]) {
+    } else if (taniere < newHex && newHex < taniere + 12) {
+        console.log("meme ligne");
+        if (newHex < taniere) {
             newHex += 1;
         } else {
             newHex -= 1;
         }
     // sinon si creature.hexId % 13 < tanieres[creature.espece] % 13 => aller de -13 en 12
-    } else if (creature.hexId % 13 < tanieres[creature.espece] % 13) {
-        if (creature.hexId < tanieres[creature.espece]) {
+    } else if (newHex % 13 < taniere % 13) {
+        console.log("partie gauche");
+        if (newHex < taniere) {
             newHex += 13;
         } else {
             newHex -= 12;
         }
     // sinon => aller de 12 en -13
     } else {
-        if (creature.hexId < tanieres[creature.espece]) {
+        console.log("partie droite");
+        if (newHex < taniere) {
             newHex += 12;
         } else {
             newHex -= 13;
         }
     }
-    switch (hexDict["h" + newHex]) {
-        case "blue":
-            creature.hydratation += 3;
-            break;
-        case "green":
-            creature.satiete += 2;
-            break;
-        case "brown":
-            break;
+    if (inGrid(newHex)) {
+        switch (hexDict["h" + newHex]) {
+            case "blue":
+                creature.hydratation += 3;
+                break;
+            case "green":
+                creature.satiete += 2;
+                break;
+            case "brown":
+                break;
+        }
+        io.emit("eraseCreature",creature.hexId);
+        creature.hexId = ("h" + newHex);
     }
-    creature.hexId = ("h" + newHex);
 }
 
 function creatureAutreSexe(creature1){
@@ -262,13 +278,6 @@ function creatureAutreSexe(creature1){
 }
 
 function listeCasesDispos(espece, hexId){
-
-    function inGrid(code) {
-        if (code > 0 && code < 168) {
-            return true;
-        }
-        return false;
-    }
 
     function forceInf(occupant, espece) {
         if (playerStats[occupant.espece][2] < playerStats[espece][2]) {
@@ -304,6 +313,7 @@ function listeCasesDispos(espece, hexId){
 
 function tour() {
     creatures.forEach(creature => {
+        console.log(creature);
         // check taniere + tours depuis repro >= 5 + creature sexe opposé pour baiser
         if (tanieres[creature.espece] == creature.hexId && creature.toursDepuisRepro >= 5 && creatureAutreSexe(creature)) {
             for (var i=0; i<playerStats[creature.espece][0]; i++) {
