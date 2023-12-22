@@ -16,6 +16,8 @@
                 var exit_btn = document.getElementById("exit_btn");
                 var start_button = document.getElementById("game_start");
                 var stats = document.getElementById("stats");
+                var maxTours = document.getElementById("toursMax");
+                var tablier = document.getElementById("tablier");
                 var username = "";
                 var connected = false;
                 var nbLignes = 13;
@@ -29,7 +31,8 @@
                     enter_btn = document.getElementById("enter_btn");
                     exit_btn = document.getElementById("exit_btn");
                     start_button = document.getElementById("game_start");
-                    confirm_stats = document.getElementById("confirm_stats");
+                    stats = document.getElementById("stats");
+                    maxTours = document.getElementById("toursMax");
                     username = name_field.value;
                 }
 
@@ -39,7 +42,9 @@
                     field_label.hidden = !field_label.hidden;
                     enter_btn.hidden = !enter_btn.hidden;
                     exit_btn.hidden = !exit_btn.hidden;
-                    confirm_stats.hidden = !confirm_stats.hidden;
+                    stats.hidden = !stats.hidden;
+                    tablier.hidden = !tablier.hidden;
+                    maxTours.hidden = true;
                     if(pseudo.innerText!=""){
                     pseudo.innerText = "";
                     } else {
@@ -62,9 +67,14 @@
                     change_view();
                 }
                 
-                function start_game() {
+                async function start_game() {
+                    const delay = ms => new Promise(res => setTimeout(res, ms));
                     update_dom();
-                    createBoard();
+                    maxTours.hidden = true;
+                    start_button.hidden = true;
+                    socket.emit("createBoard",nbLignes,nbColonnes,rayHex);
+                    await delay(2000);
+                    socket.emit("startGame");
                 }
 
                 function request_player_list(){
@@ -80,8 +90,14 @@
                 }
 
                 function sendMessage(){
-                    let message = document.getElementById('messages').value;
+                    var message = document.getElementById('messages').value;
                     socket.emit('mess',message);
+                }
+
+                function sendMaxTours(){
+                    var tours = document.getElementById('tours').value;
+                    socket.emit('maxTours',tours);
+                    maxTours.hidden = true;
                 }
 
                 socket.on('messagerie', data => {
@@ -125,6 +141,7 @@
 
                 socket.on("chef_de_partie", value => {
                     start_button.hidden = !start_button.hidden;
+                    maxTours.hidden = !maxTours.hidden;
                 });
 
                 socket.on("stats_error", () => {
@@ -134,10 +151,6 @@
                     perception.disabled = false;
                     force.disabled = false;
                 });
-                
-                function createBoard(){
-                    socket.emit("createBoard",nbLignes,nbColonnes,rayHex);
-                }
 
                 socket.on("boardCreated", (tablier) => {
                     d3.select("#tablier").html(tablier);
@@ -164,8 +177,14 @@
                             .attr("y", cy)
                             .attr("width", cwidth)
                             .attr("height", cheight)
-                            .attr("fill", "red");
+                            .attr("fill", "red")
+                            .attr("id", "rect" + creature.hexId);
                     });
+
+                    socket.on("eraseCreature", (hexId) => {
+                        d3.select("#rect" + hexId).remove();
+                    });
+
                 });
 
                 window.addEventListener("load",() => {
@@ -227,6 +246,11 @@
                 }
             </script>
             <button type="button" id="confirm_stats" onclick="confirmStats()">Confirmer distribution des stats</button>
+        </div>
+        <div id="toursMax" hidden="true">
+            <label>Entrez le nombre de tours maximum (20 par défaut)</label>
+            <input id="tours" type="text" placeholder="nombre max de tours">
+            <button type="button" onclick="sendMaxTours()">Confirmer nombre de tours</button>
         </div>
         <button hidden="true" id="game_start" onclick="start_game()">Lancez la partie</button>
         <h2>Jeu</h2>
