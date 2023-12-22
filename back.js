@@ -35,7 +35,7 @@ var tanieres = ["h6","h78","h90","h162"];
 var creatures = [];
 var numberOfCreatures = {};
 var tours = 0;
-var maxTours = 10;
+var maxTours = 20;
 
 app.use(express.static(__dirname + '/public'));
 
@@ -128,20 +128,20 @@ io.on('connection', (socket) => {
         console.log(playerStats);
     });
 
+    socket.on("sendMaxTours", (tours) => {
+        console.log("maxTours mis à jour : " + maxTours);
+        maxTours = tours;
+    });
+
     socket.on("startGame", async () => {
         console.log("La partie commence");
         const delay = ms => new Promise(res => setTimeout(res, ms));
 
-        async function playTurn() {
-            if (tours <= maxTours) {
-                console.log("Tour n°",tours);
-                console.log(creatures);
-                tour();
-                tours ++;
+        for (var tourNumber = 1; tourNumber <= maxTours; tourNumber++) {
+            console.log("Tour n°", tourNumber);
+            tour();
+            if (tourNumber < maxTours) {
                 await delay(3000);
-                await playTurn();
-            } else {
-                console.log("La partie est terminée");
             }
         }
 
@@ -269,7 +269,7 @@ function listeCasesDispos(espece, hexId){
         return false;
     }
 
-    var casesDispos = [];
+    var casesDispos = [hexId];
     var code = parseInt(hexId.slice(1));
     // répéter le nombre de fois la perception
     for (var percep=1; percep<=playerStats[espece][1]; percep++) {

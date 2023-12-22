@@ -16,6 +16,8 @@
                 var exit_btn = document.getElementById("exit_btn");
                 var start_button = document.getElementById("game_start");
                 var stats = document.getElementById("stats");
+                var maxTours = document.getElementById("toursMax");
+                var tablier = document.getElementById("tablier");
                 var username = "";
                 var connected = false;
                 var nbLignes = 13;
@@ -30,6 +32,7 @@
                     exit_btn = document.getElementById("exit_btn");
                     start_button = document.getElementById("game_start");
                     stats = document.getElementById("stats");
+                    maxTours = document.getElementById("toursMax");
                     username = name_field.value;
                 }
 
@@ -40,6 +43,8 @@
                     enter_btn.hidden = !enter_btn.hidden;
                     exit_btn.hidden = !exit_btn.hidden;
                     stats.hidden = !stats.hidden;
+                    tablier.hidden = !tablier.hidden;
+                    maxTours.hidden = true;
                     if(pseudo.innerText!=""){
                     pseudo.innerText = "";
                     } else {
@@ -65,6 +70,8 @@
                 async function start_game() {
                     const delay = ms => new Promise(res => setTimeout(res, ms));
                     update_dom();
+                    maxTours.hidden = true;
+                    start_button.hidden = true;
                     socket.emit("createBoard",nbLignes,nbColonnes,rayHex);
                     await delay(2000);
                     socket.emit("startGame");
@@ -83,8 +90,14 @@
                 }
 
                 function sendMessage(){
-                    let message = document.getElementById('messages').value;
+                    var message = document.getElementById('messages').value;
                     socket.emit('mess',message);
+                }
+
+                function sendMaxTours(){
+                    var tours = document.getElementById('tours').value;
+                    socket.emit('maxTours',tours);
+                    maxTours.hidden = true;
                 }
 
                 socket.on('messagerie', data => {
@@ -128,6 +141,7 @@
 
                 socket.on("chef_de_partie", value => {
                     start_button.hidden = !start_button.hidden;
+                    maxTours.hidden = !maxTours.hidden;
                 });
 
                 socket.on("stats_error", () => {
@@ -232,6 +246,11 @@
                 }
             </script>
             <button type="button" id="confirm_stats" onclick="confirmStats()">Confirmer distribution des stats</button>
+        </div>
+        <div id="toursMax" hidden="true">
+            <label>Entrez le nombre de tours maximum (20 par défaut)</label>
+            <input id="tours" type="text" placeholder="nombre max de tours">
+            <button type="button" onclick="sendMaxTours()">Confirmer nombre de tours</button>
         </div>
         <button hidden="true" id="game_start" onclick="start_game()">Lancez la partie</button>
         <h2>Jeu</h2>
