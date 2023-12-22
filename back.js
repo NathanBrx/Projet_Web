@@ -27,14 +27,13 @@ server.listen(8880, () => {console.log('Le serveur écoute sur le port 8880');})
 var players = [];
 var playerStats = {};
 var max_player = 4;
-var hexList = [];
+var hexDict = {};
 var colors = ["blue","green","brown"];
 var creaturesColors = ["orange","purple","black","white"];
 var sexes = ["male","femelle"];
 var tanieres = ["h6","h78","h90","h162"];
 var creatures = [];
 var numberOfCreatures = {};
-var tours = 0;
 var maxTours = 20;
 
 app.use(express.static(__dirname + '/public'));
@@ -144,8 +143,7 @@ io.on('connection', (socket) => {
                 await delay(3000);
             }
         }
-
-        await playTurn();
+        console.log("La partie est terminée");
     });
 });
 
@@ -201,14 +199,14 @@ function createHexagonBoard(nbLignes,nbColonnes,rayHex) {
                 color = colors[2];
             }
         }
-        hexList.push([current.attr("id"),color]);
+        hexDict[current.attr("id")] = color;
         svg.select("#h"+i.toString()).attr("fill",color);
     }
     return svg;
 }
 
 function retourTaniere(creature){
-    var newHex = creature.hexId;
+    var newHex = parseInt(creature.hexId.slice(1));
     // si creature.hexId % 13 == tanieres[creature.espece] % 13 => meme colonne donc aller de -13 en 13
     if (creature.hexId % 13 == tanieres[creature.espece] % 13) {
         if (creature.hexId < tanieres[creature.espece]) {
@@ -238,7 +236,17 @@ function retourTaniere(creature){
             newHex -= 13;
         }
     }
-    creature.hexId = newHex;
+    switch (hexDict["h" + newHex]) {
+        case "blue":
+            creature.hydratation += 3;
+            break;
+        case "green":
+            creature.satiete += 2;
+            break;
+        case "brown":
+            break;
+    }
+    creature.hexId = ("h" + newHex);
 }
 
 function creatureAutreSexe(creature1){
@@ -294,7 +302,7 @@ function listeCasesDispos(espece, hexId){
     return casesDispos;
 }
 
-function tour(grid) {
+function tour() {
     creatures.forEach(creature => {
         // check taniere + tours depuis repro >= 5 + creature sexe opposé pour baiser
         if (tanieres[creature.espece] == creature.hexId && creature.toursDepuisRepro >= 5 && creatureAutreSexe(creature)) {
@@ -306,8 +314,8 @@ function tour(grid) {
         // check si stats >= 6 pour retour taniere
         } else if(creature.hydratation>=6 && creature.satiete>=6) {
             retourTaniere(creature);
-            creature.hydratation -= 1.5;
-            creature.satiete -= 0.75;                
+            creature.hydratation -= 1;
+            creature.satiete -= 0.5;
             creature.toursDepuisRepro += 1;
         } else {
             // check cases adjacentes * perception innocupees ou si occupe, force > pour bouger
@@ -316,12 +324,13 @@ function tour(grid) {
             console.log("casesDispos: " + casesDispos);
             var typeCasesDispos = [];
             casesDispos.forEach(codeCase => {
-                hexList.forEach(hex => {
-                    if (hex[0] == codeCase) {
-                        typeCasesDispos.push(hex);
+                for (var key in hexDict) {
+                    if (key == codeCase) {
+                        typeCasesDispos.push([key,hexDict[key]]);
                     }
-                });
+                }
             });
+            var oldHexId = creature.hexId;
             io.emit("eraseCreature",creature.hexId);
             // si case eau présente
             if (typeCasesDispos.some(hex => hex.includes("blue")) && typeCasesDispos.some(hex => hex.includes("green"))) {
@@ -344,9 +353,14 @@ function tour(grid) {
             } else {
                 creature.hexId = typeCasesDispos.filter(hex => hex.includes("brown"))[0][0];
             }
-            // => réduire les cases possibles en fonction
-            creature.hydratation -= 1.5;
-            creature.satiete -= 0.75;
+            // => réduire les stats en fonction du déplacement / non déplacement
+            if (oldHexId != creature.hexId) {
+                creature.hydratation -= 1;
+                creature.satiete -= 0.5;
+            } else {
+                creature.hydratation -= 0.5;
+                creature.satiete -= 0.25;
+            }
             creature.toursDepuisRepro += 1;
         }
         // check si creature décède
