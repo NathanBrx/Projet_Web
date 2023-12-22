@@ -67,7 +67,7 @@
                     update_dom();
                     socket.emit("createBoard",nbLignes,nbColonnes,rayHex);
                     await delay(2000);
-                    socket.emit("start_game");
+                    socket.emit("startGame");
                 }
 
                 function request_player_list(){

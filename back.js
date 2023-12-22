@@ -109,13 +109,11 @@ io.on('connection', (socket) => {
         function checkSameStats(stats) {
             var sameStats = false;
             if (players.length > 1) {
-                for (var user=0; user<= players.length-1; user++) {
-                    for (var i=0; i<=2; i++) {
-                        if (playerStats[user][i] != stats[i]) {
-                            sameStats = false;
-                        }
+                players.forEach(user => {
+                    if (playerStats[user][0] == stats[0] && playerStats[user][1] == stats[1] && playerStats[user][2] == stats[2]) {
+                        sameStats = true;
                     }
-                }
+                });
             }
             return sameStats;
         }
@@ -132,8 +130,10 @@ io.on('connection', (socket) => {
     });
 
     socket.on("startGame", async () => {
+        console.log("La partie commence");
         const delay = ms => new Promise(res => setTimeout(res, ms));
         while (tours <= maxTours) {
+            console.log("Tour n°",tours);
             tour();
             tours ++;
             await delay(3000);
@@ -245,10 +245,9 @@ function creatureAutreSexe(creature1){
     return sameSexe;
 }
 
-function listeCasesDispos(grid, espece, hexId){
+function listeCasesDispos(espece, hexId){
 
-    function inGrid(hexId) {
-        var code = parseInt(hexId.slice(1));
+    function inGrid(code) {
         if (code > 0 || code < 168) {
             return true;
         }
@@ -263,16 +262,18 @@ function listeCasesDispos(grid, espece, hexId){
     }
 
     var casesDispos = [];
+    var code = parseInt(hexId.slice(1));
     // répéter le nombre de fois la perception
     for (var percep=1; percep<=playerStats[espece][1]; percep++) {
         // liste d'adjacence qui se met a jour a chaque tour
-        var adjacent = [hexIdTemp-(1*percep),hexIdTemp+(1*percep),hexIdTemp-(13*percep),hexIdTemp+(13*percep),hexIdTemp-(12*percep),hexIdTemp+(12*percep)];
+        var adjacent = [(code-(1*percep)).toString(),(code+(1*percep)).toString(),(code-(13*percep)).toString(),(code+(13*percep)).toString(),(code-(12*percep)).toString(),(code+(12*percep)).toString()];
         // pour chaque hexagone adjacent, check si il est dans la grille et si creature présente
         adjacent.forEach(hexIdTemp => {
+            //console.log("hexIdTemp : " + hexIdTemp + " " + typeof hexIdTemp);
             if (inGrid(hexIdTemp)) {
                 creatures.filter(creature => creature.espece !== espece).forEach(creature => {
-                    if (creature.hexId != hexIdTemp || forceSup(creature)) {
-                        casesDispos.push(adjacent[i]);
+                    if (creature.hexId != "h" + hexIdTemp || forceSup(creature)) {
+                        casesDispos.push("h" + adjacent[i]);
                     }
                 });
             }
@@ -300,10 +301,10 @@ function tour(grid) {
         } else {
             // check cases adjacentes * perception innocupees ou si occupe, force > pour bouger
             // => liste avec les cases possibles
-            var typeCasesDispos = []; 
-            listeCasesDispos(grid, creature.espece, creature.hexId).forEach(hexId => {
-                typeCasesDispos = hexList.filter(hex => hex[0] == hexId);
-            });
+            console.log(creature.hexId, typeof creature.hexId);
+            var casesDispos = listeCasesDispos(creature.espece, creature.hexId);
+            console.log(casesDispos);
+            var typeCasesDispos = hexList.filter(hex => hex[0] == '1');
             // si case eau présente
             if (typeCasesDispos.some(hex => hex.includes("blue"))) {
                 // si case nourriture et faim => prairie
