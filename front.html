@@ -18,6 +18,7 @@
                 var stats = document.getElementById("stats");
                 var maxTours = document.getElementById("toursMax");
                 var tablier = document.getElementById("tablier");
+                var gameOver = document.getElementById("endScreen");
                 var username = "";
                 var connected = false;
                 var nbLignes = 13;
@@ -33,6 +34,8 @@
                     start_button = document.getElementById("game_start");
                     stats = document.getElementById("stats");
                     maxTours = document.getElementById("toursMax");
+                    tablier = document.getElementById("tablier");
+                    gameOver = document.getElementById("endSreen");
                     username = name_field.value;
                 }
 
@@ -43,8 +46,9 @@
                     enter_btn.hidden = !enter_btn.hidden;
                     exit_btn.hidden = !exit_btn.hidden;
                     stats.hidden = !stats.hidden;
-                    tablier.hidden = !tablier.hidden;
-                    maxTours.hidden = true;
+                    tablier.hidden = true;
+                    maxTours.hidden  = true;
+                    gameOver.hidden = true;
                     if(pseudo.innerText!=""){
                     pseudo.innerText = "";
                     } else {
@@ -100,21 +104,6 @@
                     maxTours.hidden = true;
                 }
 
-                function initializeSlider(sliderId, outputId) {
-                    var slider = document.getElementById(sliderId);
-                    var output = document.getElementById(outputId);
-
-                    output.innerHTML = slider.value;
-
-                    function bindSliderToOutput() {
-                        slider.oninput = function() {
-                            output.innerHTML = this.value;
-                        };
-                    }
-
-                    bindSliderToOutput();
-                }
-
                 function confirmStats(button) {
                     var reproduction = document.getElementById("reproduction");
                     var perception = document.getElementById("perception");
@@ -131,8 +120,25 @@
                     }
                 }
 
-                function endGame() {
-                    document.getElementById("endScreen").style.display = "block";
+                function endGame(numberOfCreatures) {
+                    document.getElementById("tablier").hidden = true;
+                    var endScreen = document.getElementById("endScreen");
+                    var winner = [];
+                    var max = 0;
+                    for (var player in numberOfCreatures) {
+                        if (numberOfCreatures[player] > max) {
+                            max = numberOfCreatures[player];
+                            winner = [player, numberOfCreatures[player]];
+                        }
+                    }
+                    var winnerTitle = document.createElement("p");
+                    winnerTitle.innerHTML = "Winner : " + winner[0] + " avec " + winner[1] + " creatures";
+                    endScreen.appendChild(winnerTitle);
+                    /*
+                    var resultTable = document.createElement("li");
+                    resultTable.appendChild(document.createTextNode(""))
+                    */
+                    endScreen.hidden = false;
                 }
 
                 socket.on('messagerie', data => {
@@ -188,6 +194,7 @@
                 });
 
                 socket.on("boardCreated", (tablier) => {
+                    document.getElementById("tablier").hidden = false;
                     d3.select("#tablier").html(tablier);
                 });
 
@@ -221,15 +228,13 @@
                     d3.select("#rect" + hexId).remove();
                 });
 
-                socket.on("endGame", endGame);
+                socket.on("endGame", (numberOfCreatures) => {
+                    endGame(numberOfCreatures);
+                });
 
                 window.addEventListener("load",() => {
                     request_player_list();
                 });
-
-                initializeSlider("reproduction", "repro");
-                initializeSlider("perception", "percep");
-                initializeSlider("force", "forc");
             </script>
     </head>
     <body>
@@ -249,6 +254,26 @@
             <input type="range" min="1" max="5" value="1" class="slider" id="perception"> Valeur : <span id="percep"></span>
             <h3>Force</h3>
             <input type="range" min="1" max="5" value="1" class="slider" id="force"> Valeur : <span id="forc"></span>
+            <script>
+                function initializeSlider(sliderId, outputId) {
+                    var slider = document.getElementById(sliderId);
+                    var output = document.getElementById(outputId);
+
+                    output.innerHTML = slider.value;
+
+                    function bindSliderToOutput() {
+                        slider.oninput = function() {
+                            output.innerHTML = this.value;
+                        };
+                    }
+
+                    bindSliderToOutput();
+                }
+
+                initializeSlider("reproduction", "repro");
+                initializeSlider("perception", "percep");
+                initializeSlider("force", "forc");
+            </script>
             <button type="button" id="confirm_stats" onclick="confirmStats()">Confirmer distribution des stats</button>
         </div>
         <div id="toursMax" hidden="true">
@@ -267,10 +292,8 @@
             <br>
             <button type = "button" id="sendMessage" onclick="sendMessage()"> Envoyer message</button>
         </div>
-        <div id="endScreen" class="modal">
-            <div class="modal-content">
-                <p>Game Over</p>
-            </div>
+        <div id="endScreen" hidden="true">
+            <h2>Game Over</h2>
         </div>
     </body>
 </html>

@@ -79,7 +79,10 @@ io.on('connection', (socket) => {
     socket.on("quit_game", player => {
         console.log(player,"a quitté la partie");
         delete playerStats[player];
-        creatures = creatures.filter(creature => creature.espece !== player);
+        creatures.filter(creature => creature.espec == player).forEach(creatureAEff => {
+            io.emit("eraseCreature",creatureAEff.hexId);
+        });
+        creatures = creatures.filter(creature => creature.espece != player);
         players.splice(players.indexOf(player),1);
         console.log(creatures);
         io.emit('send_list', players);
@@ -215,7 +218,7 @@ function inGrid(code) {
 
 function retourTaniere(creature){
     var newHex = parseInt(creature.hexId.slice(1));
-    var taniere = parseInt(tanieres[creature.espece].slice(1));
+    var taniere = parseInt(tanieres[players.indexOf(creature.espece)].slice(1));
     // si creature.hexId % 13 == tanieres[creature.espece] % 13 => meme colonne donc aller de -13 en 13
     if (newHex % 13 == taniere % 13) {
         console.log("meme colonne");

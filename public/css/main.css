@@ -21,11 +21,11 @@
 }
   
 .slider::-moz-range-thumb {
-width: 25px;
-height: 25px;
-border-radius: 50%;
-background: #04AA6D;
-cursor: pointer;
+    width: 25px;
+    height: 25px;
+    border-radius: 50%;
+    background: #04AA6D;
+    cursor: pointer;
 }
 
 .Chat {
@@ -103,23 +103,4 @@ button:hover {
     background-color: #2e772e;
     color: gainsboro;
     transition: all 0.2s ease-in-out;
-}
-
-.modal {
-    display: none;
-    position: fixed;
-    z-index: 1;
-    padding-top: 100px;
-    width: 100%;
-    height: 100%;
-    overflow: auto;
-    background-color: rgb(0 0 0 / 0.4);
-}
-
-.modal-content {
-    background-color: #fefefe;
-    margin: auto;
-    padding: 20px;
-    border: 1px solid #888;
-    width: 80%;
 }
