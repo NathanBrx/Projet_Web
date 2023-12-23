@@ -18,6 +18,7 @@
                 var stats = document.getElementById("stats");
                 var maxTours = document.getElementById("toursMax");
                 var tablier = document.getElementById("tablier");
+                var gameOver = document.getElementById("endScreen");
                 var username = "";
                 var connected = false;
                 var nbLignes = 13;
@@ -33,6 +34,8 @@
                     start_button = document.getElementById("game_start");
                     stats = document.getElementById("stats");
                     maxTours = document.getElementById("toursMax");
+                    tablier = document.getElementById("tablier");
+                    gameOver = document.getElementById("endSreen");
                     username = name_field.value;
                 }
 
@@ -43,8 +46,9 @@
                     enter_btn.hidden = !enter_btn.hidden;
                     exit_btn.hidden = !exit_btn.hidden;
                     stats.hidden = !stats.hidden;
-                    tablier.hidden = !tablier.hidden;
-                    maxTours.hidden = true;
+                    tablier.hidden = true;
+                    maxTours.hidden  = true;
+                    gameOver.hidden = true;
                     if(pseudo.innerText!=""){
                     pseudo.innerText = "";
                     } else {
@@ -94,10 +98,47 @@
                     socket.emit('mess',message);
                 }
 
-                function sendMaxTours(){
+                function setMaxTours(){
                     var tours = document.getElementById('tours').value;
-                    socket.emit('maxTours',tours);
+                    socket.emit('setMaxTours',tours);
                     maxTours.hidden = true;
+                }
+
+                function confirmStats(button) {
+                    var reproduction = document.getElementById("reproduction");
+                    var perception = document.getElementById("perception");
+                    var force = document.getElementById("force");
+                    var total = parseInt(reproduction.value) + parseInt(perception.value) + parseInt(force.value);
+                    if (total == 9) {
+                        confirm_stats.hidden = true;
+                        reproduction.disabled = true;
+                        perception.disabled = true;
+                        force.disabled = true;
+                        socket.emit("stats", reproduction.value, perception.value, force.value, username);
+                    } else {
+                        window.alert("Vous devez attribuer 9 points");
+                    }
+                }
+
+                function endGame(numberOfCreatures) {
+                    document.getElementById("tablier").hidden = true;
+                    var endScreen = document.getElementById("endScreen");
+                    var winner = [];
+                    var max = 0;
+                    for (var player in numberOfCreatures) {
+                        if (numberOfCreatures[player] > max) {
+                            max = numberOfCreatures[player];
+                            winner = [player, numberOfCreatures[player]];
+                        }
+                    }
+                    var winnerTitle = document.createElement("p");
+                    winnerTitle.innerHTML = "Winner : " + winner[0] + " avec " + winner[1] + " creatures";
+                    endScreen.appendChild(winnerTitle);
+                    /*
+                    var resultTable = document.createElement("li");
+                    resultTable.appendChild(document.createTextNode(""))
+                    */
+                    endScreen.hidden = false;
                 }
 
                 socket.on('messagerie', data => {
@@ -153,6 +194,7 @@
                 });
 
                 socket.on("boardCreated", (tablier) => {
+                    document.getElementById("tablier").hidden = false;
                     d3.select("#tablier").html(tablier);
                 });
 
@@ -177,14 +219,17 @@
                             .attr("y", cy)
                             .attr("width", cwidth)
                             .attr("height", cheight)
-                            .attr("fill", "red")
+                            .attr("fill", creature.color)
                             .attr("id", "rect" + creature.hexId);
                     });
+                });
 
-                    socket.on("eraseCreature", (hexId) => {
-                        d3.select("#rect" + hexId).remove();
-                    });
+                socket.on("eraseCreature", (hexId) => {
+                    d3.select("#rect" + hexId).remove();
+                });
 
+                socket.on("endGame", (numberOfCreatures) => {
+                    endGame(numberOfCreatures);
                 });
 
                 window.addEventListener("load",() => {
@@ -228,29 +273,13 @@
                 initializeSlider("reproduction", "repro");
                 initializeSlider("perception", "percep");
                 initializeSlider("force", "forc");
-
-                function confirmStats(button) {
-                    var reproduction = document.getElementById("reproduction");
-                    var perception = document.getElementById("perception");
-                    var force = document.getElementById("force");
-                    var total = parseInt(reproduction.value) + parseInt(perception.value) + parseInt(force.value);
-                    if (total == 9) {
-                        confirm_stats.hidden = true;
-                        reproduction.disabled = true;
-                        perception.disabled = true;
-                        force.disabled = true;
-                        socket.emit("stats", reproduction.value, perception.value, force.value, username);
-                    } else {
-                        window.alert("Vous devez attribuer 9 points");
-                    }
-                }
             </script>
             <button type="button" id="confirm_stats" onclick="confirmStats()">Confirmer distribution des stats</button>
         </div>
         <div id="toursMax" hidden="true">
             <label>Entrez le nombre de tours maximum (20 par défaut)</label>
             <input id="tours" type="text" placeholder="nombre max de tours">
-            <button type="button" onclick="sendMaxTours()">Confirmer nombre de tours</button>
+            <button type="button" onclick="setMaxTours()">Confirmer nombre de tours</button>
         </div>
         <button hidden="true" id="game_start" onclick="start_game()">Lancez la partie</button>
         <h2>Jeu</h2>
@@ -262,6 +291,9 @@
             <textarea id="messages" name="messages" placeholder="Entrez un message à envoyer"></textarea>
             <br>
             <button type = "button" id="sendMessage" onclick="sendMessage()"> Envoyer message</button>
+        </div>
+        <div id="endScreen" hidden="true">
+            <h2>Game Over</h2>
         </div>
     </body>
 </html>
